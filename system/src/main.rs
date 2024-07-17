@@ -4,6 +4,7 @@
 
 mod tmp;
 mod download;
+mod resources;
 
 fn main() {
     println!("Hello, world!");
