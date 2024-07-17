@@ -10,13 +10,13 @@ use std::path::PathBuf;
 
 use reqwest::blocking;
 
-pub struct Download {
+pub struct Downloader {
     path: PathBuf,
 }
 
-impl Download {
+impl Downloader {
     pub fn new(path: PathBuf) -> Self {
-        Download { path }
+        Downloader { path }
     }
 
     pub fn to_file(self) -> io::Result<File> {
@@ -66,7 +66,7 @@ mod tests {
         let url = format!("{}/system/resources/test/download/{}", base_url, filename);
         let temp_dir = TmpWorkingDir::new()?;
         let temp_file_path = temp_dir.join(filename.as_ref());
-        let downloader = Download::new(temp_file_path.clone());
+        let downloader = Downloader::new(temp_file_path.clone());
 
         downloader.download_blocking(filename, &url)?;
         assert!(temp_file_path.exists());
@@ -91,7 +91,7 @@ mod tests {
         let url = format!("{}/system/resources/test/download/{}", base_url, filename);
         let temp_dir = TmpWorkingDir::new()?;
         let temp_file_path = temp_dir.join(filename.as_ref());
-        let downloader = Download::new(temp_file_path.clone());
+        let downloader = Downloader::new(temp_file_path.clone());
 
         let res = downloader.download_blocking(filename, &url);
 
