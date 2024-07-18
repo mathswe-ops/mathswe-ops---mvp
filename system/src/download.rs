@@ -72,7 +72,7 @@ impl Downloader {
                 if res.status().is_success() {
                     res
                         .bytes()
-                        .map_err(|err| io_err(format!("Failed to read file bytes {}", filename)))
+                        .map_err(|err| io_err(format!("Failed to read file bytes {}: {}", filename, err)))
                 } else {
                     Err(io_err(format!("Failed to download {}: {}", filename, res.status())))
                 }
