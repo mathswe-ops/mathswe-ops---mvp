@@ -76,14 +76,12 @@ impl Downloader {
                 }
             })
             .and_then(|bytes| {
-                self
-                    .to_file()
+                self.to_file()
                     .and_then(|mut file| file.write_all(&bytes))
                     .map_err(|err| io_err(format!("Failed to write {}: {}", filename, err)))
             })
             .and_then(|_| {
-                self
-                    .req
+                self.req
                     .integrity
                     .check(self.path.as_path())
                     .and_then(|check| {
