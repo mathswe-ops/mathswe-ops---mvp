@@ -100,7 +100,7 @@ mod tests {
     use std::fs;
     use std::path::Path;
     use crate::download::hashing::HashAlgorithm;
-    use crate::tmp::tmp::TmpWorkingDir;
+    use crate::tmp::TmpWorkingDir;
 
     use super::*;
 
