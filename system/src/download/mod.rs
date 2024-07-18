@@ -3,4 +3,4 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 pub mod download;
-mod hashing;
+pub mod hashing;
