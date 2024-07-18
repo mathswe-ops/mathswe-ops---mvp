@@ -2,11 +2,3 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-mod tmp;
-mod download;
-mod resources;
-mod cmd;
-
-fn main() {
-    println!("Hello, world!");
-}
