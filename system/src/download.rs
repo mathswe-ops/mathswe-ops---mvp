@@ -4,7 +4,6 @@
 
 pub mod hashing;
 
-use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::{ErrorKind, Write};

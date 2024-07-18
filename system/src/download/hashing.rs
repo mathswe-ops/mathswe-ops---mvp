@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Read};
 use std::path::Path;
-use std::str::FromStr;
 
 use sha2::{Digest, Sha256};
 
