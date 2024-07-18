@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+pub mod hashing;
+
 use std::error::Error;
 use std::fs::File;
 use std::io;
