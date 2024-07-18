@@ -10,10 +10,12 @@ use std::str::FromStr;
 
 use sha2::{Digest, Sha256};
 
+#[derive(Debug)]
 pub(crate) enum HashAlgorithm {
     Sha256
 }
 
+#[derive(Debug)]
 pub(crate) struct Hash {
     algorithm: HashAlgorithm,
     hash: String,
