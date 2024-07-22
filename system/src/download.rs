@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-pub mod hashing;
-
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
-use reqwest::blocking;
-use DownloadRequestError::InsecureProtocol;
+use reqwest::{blocking, Url};
+
+use DownloadRequestError::{InsecureProtocol, InvalidUrl};
+
 use crate::download::hashing::Hash;
+
+pub mod hashing;
 
 #[derive(Debug)]
 pub enum Integrity {
@@ -31,13 +33,15 @@ impl Integrity {
 
 #[derive(Debug)]
 pub enum DownloadRequestError {
+    InvalidUrl { url: String, error: String },
     InsecureProtocol { url: String },
 }
 
 impl Display for DownloadRequestError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            InsecureProtocol { url } => format!("URL {} protocol is not HTTPS", url)
+            InvalidUrl { url, error } => format!("Invalid URL {}. Cause: {}", url, error),
+            InsecureProtocol { url } => format!("URL {} protocol is not HTTPS", url),
         };
 
         write!(f, "{}", msg)
@@ -45,17 +49,22 @@ impl Display for DownloadRequestError {
 }
 
 pub struct DownloadRequest {
-    url: String,
+    url: Url,
     integrity: Integrity,
 }
 
 impl DownloadRequest {
-    pub fn new(url: String, integrity: Integrity) -> Result<Self, DownloadRequestError> {
-        if url.starts_with("https://") {
-            Ok(DownloadRequest { url, integrity })
-        } else {
-            Err(InsecureProtocol { url })
-        }
+    pub fn new(url_raw: String, integrity: Integrity) -> Result<Self, DownloadRequestError> {
+        Ok(url_raw.clone())
+            .and_then(|s| Url::parse(&s))
+            .map_err(|error| InvalidUrl { url: url_raw.clone(), error: error.to_string() })
+            .and_then(|url| {
+                if url.scheme() == "https" {
+                    Ok(DownloadRequest { url, integrity })
+                } else {
+                    Err(InsecureProtocol { url: url_raw.clone() })
+                }
+            })
     }
 }
 
@@ -82,7 +91,7 @@ impl Downloader {
 
         let url = &self.req.url;
 
-        blocking::get(url)
+        blocking::get(url.clone())
             .map_err(to_io_err(format!("Failed to fetch {}", url)))
             .and_then(|res| {
                 if res.status().is_success() {
@@ -117,6 +126,7 @@ impl Downloader {
 mod tests {
     use std::fs;
     use std::path::Path;
+
     use crate::download::hashing::HashAlgorithm;
     use crate::tmp::TmpWorkingDir;
 
