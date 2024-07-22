@@ -6,6 +6,7 @@ use std::fmt::Display;
 
 pub(crate) mod packages;
 
+#[derive(PartialEq)]
 pub struct SemVer(u8, u8, u8);
 
 impl Display for SemVer {
@@ -14,6 +15,7 @@ impl Display for SemVer {
     }
 }
 
+#[derive(PartialEq)]
 pub struct SemVerRev(u8, u8, u8, u16);
 
 impl Display for SemVerRev {
