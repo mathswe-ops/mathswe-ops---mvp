@@ -14,6 +14,14 @@ impl Display for SemVer {
     }
 }
 
+pub struct SemVerRev(u8, u8, u8, u16);
+
+impl Display for SemVerRev {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}.{}", self.0, self.1, self.2, self.3)
+    }
+}
+
 pub trait Install<E> {
     fn install(&self) -> Result<(), E>;
 }
@@ -24,12 +32,19 @@ pub trait Uninstall<E> {
 
 #[cfg(test)]
 mod tests {
-    use crate::package::SemVer;
+    use crate::package::{SemVer, SemVerRev};
 
     #[test]
     fn semver_to_string() {
         let ver = SemVer(2, 10, 6);
 
         assert_eq!("2.10.6", ver.to_string())
+    }
+
+    #[test]
+    fn semver_rev_to_string() {
+        let ver = SemVerRev(2, 10, 6, 465);
+
+        assert_eq!("2.10.6.465", ver.to_string())
     }
 }
