@@ -4,12 +4,14 @@
 
 pub mod hashing;
 
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 use reqwest::blocking;
+use DownloadRequestError::InsecureProtocol;
 use crate::download::hashing::Hash;
 
 #[derive(Debug)]
@@ -27,17 +29,32 @@ impl Integrity {
     }
 }
 
+#[derive(Debug)]
+pub enum DownloadRequestError {
+    InsecureProtocol { url: String },
+}
+
+impl Display for DownloadRequestError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            InsecureProtocol { url } => format!("URL {} protocol is not HTTPS", url)
+        };
+
+        write!(f, "{}", msg)
+    }
+}
+
 pub struct DownloadRequest {
     url: String,
     integrity: Integrity,
 }
 
 impl DownloadRequest {
-    pub fn new(url: String, integrity: Integrity) -> io::Result<Self> {
+    pub fn new(url: String, integrity: Integrity) -> Result<Self, DownloadRequestError> {
         if url.starts_with("https://") {
             Ok(DownloadRequest { url, integrity })
         } else {
-            Err(io::Error::new(ErrorKind::Other, format!("URL {} is not HTTPS protocol", url)))
+            Err(InsecureProtocol { url })
         }
     }
 }
@@ -123,6 +140,12 @@ mod tests {
         );
 
         assert!(req.is_err());
+
+        let error_matches = match req {
+            Err(InsecureProtocol { url }) => url == "http://example.com",
+            _ => false
+        };
+        assert!(error_matches);
     }
 
     #[test]
@@ -134,7 +157,9 @@ mod tests {
         let temp_file_path = temp_dir.join(filename.as_ref());
         let checksum = "0ecfebe350c45dbded8cfb32d3af0b910bde66fc2aafbafabdaaeef6cae48a59".to_string();
         let integrity = Integrity::Hash(Hash::new(HashAlgorithm::Sha256, checksum));
-        let req = DownloadRequest::new(url, integrity)?;
+        let req = DownloadRequest::new(url, integrity)
+            .expect("Fail to build a correct download request");
+
         let downloader = Downloader::new(req, temp_file_path.clone());
 
         downloader.download_blocking(filename)?;
@@ -160,7 +185,9 @@ mod tests {
         let url = format!("{}/system/resources/test/download/{}", base_url, filename);
         let temp_dir = TmpWorkingDir::new()?;
         let temp_file_path = temp_dir.join(filename.as_ref());
-        let req = DownloadRequest::new(url, Integrity::None)?;
+        let req = DownloadRequest::new(url, Integrity::None)
+            .expect("Fail to build a correct download request");
+
         let downloader = Downloader::new(req, temp_file_path.clone());
 
         let res = downloader.download_blocking(filename);
