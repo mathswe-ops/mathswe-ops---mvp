@@ -16,7 +16,7 @@ use crate::download::hashing::Hash;
 
 pub mod hashing;
 
-#[derive(Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Integrity {
     Hash(Hash),
     None,
@@ -66,6 +66,14 @@ impl DownloadRequest {
                     Err(InsecureProtocol { url: url.to_string() })
                 }
             })
+    }
+
+    pub fn url(&self) -> Url {
+        self.url.clone()
+    }
+
+    pub fn integrity(&self) -> Integrity {
+        self.integrity.clone()
     }
 }
 
