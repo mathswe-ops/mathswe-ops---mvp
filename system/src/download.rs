@@ -54,15 +54,15 @@ pub struct DownloadRequest {
 }
 
 impl DownloadRequest {
-    pub fn new(url_raw: String, integrity: Integrity) -> Result<Self, DownloadRequestError> {
-        Ok(url_raw.clone())
-            .and_then(|s| Url::parse(&s))
-            .map_err(|error| InvalidUrl { url: url_raw.clone(), error: error.to_string() })
+    pub fn new(url_raw: &str, integrity: Integrity) -> Result<Self, DownloadRequestError> {
+        Ok(url_raw)
+            .and_then(Url::parse)
+            .map_err(|error| InvalidUrl { url: url_raw.to_string(), error: error.to_string() })
             .and_then(|url| {
                 if url.scheme() == "https" {
                     Ok(DownloadRequest { url, integrity })
                 } else {
-                    Err(InsecureProtocol { url: url_raw.clone() })
+                    Err(InsecureProtocol { url: url.to_string() })
                 }
             })
     }
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn checks_url() {
         let req = DownloadRequest::new(
-            "https://example.com".to_string(),
+            "https://example.com",
             Integrity::None,
         );
 
@@ -145,14 +145,14 @@ mod tests {
     #[test]
     fn rejects_unsafe_url() {
         let req = DownloadRequest::new(
-            "http://example.com".to_string(),
+            "http://example.com",
             Integrity::None,
         );
 
         assert!(req.is_err());
 
         let error_matches = match req {
-            Err(InsecureProtocol { url }) => url == "http://example.com",
+            Err(InsecureProtocol { url }) => url == "http://example.com/",
             _ => false
         };
         assert!(error_matches);
@@ -167,7 +167,7 @@ mod tests {
         let temp_file_path = temp_dir.join(filename.as_ref());
         let checksum = "0ecfebe350c45dbded8cfb32d3af0b910bde66fc2aafbafabdaaeef6cae48a59".to_string();
         let integrity = Integrity::Hash(Hash::new(HashAlgorithm::Sha256, checksum));
-        let req = DownloadRequest::new(url, integrity)
+        let req = DownloadRequest::new(&url, integrity)
             .expect("Fail to build a correct download request");
 
         let downloader = Downloader::new(req, temp_file_path.clone());
@@ -195,7 +195,7 @@ mod tests {
         let url = format!("{}/system/resources/test/download/{}", base_url, filename);
         let temp_dir = TmpWorkingDir::new()?;
         let temp_file_path = temp_dir.join(filename.as_ref());
-        let req = DownloadRequest::new(url, Integrity::None)
+        let req = DownloadRequest::new(&url, Integrity::None)
             .expect("Fail to build a correct download request");
 
         let downloader = Downloader::new(req, temp_file_path.clone());
