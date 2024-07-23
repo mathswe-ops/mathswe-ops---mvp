@@ -24,12 +24,12 @@ impl Display for SemVerRev {
     }
 }
 
-pub trait Install<E> {
-    fn install(&self) -> Result<(), E>;
+pub trait Install {
+    fn install(&self) -> Result<(), String>;
 }
 
-pub trait Uninstall<E> {
-    fn uninstall(&self) -> Result<(), E>;
+pub trait Uninstall {
+    fn uninstall(&self) -> Result<(), String>;
 }
 
 #[cfg(test)]
