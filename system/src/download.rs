@@ -48,7 +48,7 @@ impl Display for DownloadRequestError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DownloadRequest {
     url: Url,
     integrity: Integrity,
