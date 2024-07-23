@@ -3,11 +3,16 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use clap::ValueEnum;
+use serde::de::DeserializeOwned;
+use serde::Deserialize;
+
 use zoom::ZoomImage;
-use crate::image::{Install, Uninstall};
+
+use crate::image::{ImageInfoError, ImageInfoLoader, Install, Uninstall};
 use crate::image::images::ImageId::Zoom;
 use crate::package::{Os, Package};
 
@@ -36,16 +41,21 @@ pub trait Image: Display + Install + Uninstall {
     }
 }
 
-pub fn load_image(id: ImageId, os: Os) -> Option<impl Image> {
-    match id {
-        Zoom => ZoomImage::from(os, zoom::DEF_VERSION)
-    }
+pub fn load_image(id: ImageId, os: Os) -> Result<Option<impl Image>, ImageInfoError> {
+    let info = ImageInfoLoader { root: PathBuf::from("image"), dir: PathBuf::from("") };
+    let image = match id {
+        Zoom => info.load(id).map(|info| ZoomImage::from(os, info))?
+    };
+
+    Ok(image)
 }
 
 mod zoom {
     use std::fmt::{Display, Formatter};
+    use std::str::FromStr;
 
     use reqwest::Url;
+    use serde::{Deserialize, Serialize};
 
     use Os::Linux;
 
@@ -57,6 +67,11 @@ mod zoom {
     use crate::package::LinuxType::Ubuntu;
     use crate::package::OsArch::X64;
 
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ZoomInfo {
+        version: SemVerRev,
+    }
+
     pub struct ZoomImage(Package);
 
     impl ZoomImage {
@@ -66,7 +81,7 @@ mod zoom {
             }.to_string()
         }
 
-        pub fn from(os: Os, version: SemVerRev) -> Option<Self> {
+        pub fn from(os: Os, ZoomInfo { version }: ZoomInfo) -> Option<Self> {
             let fetch_url = format!(
                 "https://zoom.us/client/{}/{}",
                 version,
@@ -110,18 +125,33 @@ mod zoom {
         }
     }
 
-    // It will be deprecated when reading this volatile data from system/package/zoom config file...
-    pub const DEF_VERSION: SemVerRev = SemVerRev(6, 1, 1, 443);
-
     #[cfg(test)]
     mod tests {
+        use std::path::PathBuf;
+
         use crate::download::Integrity;
-        use crate::image::images::zoom::ZoomImage;
+        use crate::image::images::ImageId::Zoom;
+        use crate::image::images::ImageInfoLoader;
+        use crate::image::images::zoom::{ZoomImage, ZoomInfo};
         use crate::package::{SemVerRev, UBUNTU_X64};
 
         #[test]
+        fn loads_zoom_image_info() {
+            let info = ImageInfoLoader {
+                root: PathBuf::from("resources/test/image"),
+                dir: PathBuf::from(""),
+            };
+            let zoom_info: ZoomInfo = info
+                .load(Zoom)
+                .expect("Fail to load Zoom test image");
+
+            assert_eq!("6.1.1.443", zoom_info.version.to_string())
+        }
+
+        #[test]
         fn creates_zoom_image() {
-            let ZoomImage(package) = ZoomImage::from(UBUNTU_X64, SemVerRev(6, 1, 1, 443))
+            let zoom_info = ZoomInfo { version: SemVerRev(6, 1, 1, 443) };
+            let ZoomImage(package) = ZoomImage::from(UBUNTU_X64, zoom_info)
                 .unwrap();
 
             assert_eq!("zoom", package.name);

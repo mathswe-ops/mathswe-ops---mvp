@@ -56,6 +56,7 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
         .ok_or_else(|| "OS unsupported".to_string())?;
 
     let load = |id: ImageId| load_image(id.clone(), os.clone())
+        .map_err(|error| error.to_string())?
         .ok_or_else(|| format!("Image {} not supported", id));
 
     match operation {
