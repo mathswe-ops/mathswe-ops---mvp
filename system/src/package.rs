@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::fmt::{Display, Formatter};
+use std::fmt;
+use std::fmt::{Display, Formatter, Write};
 use std::num::ParseIntError;
 use std::str::FromStr;
-
+use de::Visitor;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::download::DownloadRequest;
 use crate::package::LinuxType::Ubuntu;
@@ -21,7 +22,13 @@ pub enum VersionError {
     ParseIntError(ParseIntError),
 }
 
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
+impl Display for VersionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub struct SemVer(pub u8, pub u8, pub u8);
 
 impl Display for SemVer {
@@ -50,11 +57,37 @@ impl FromStr for SemVer {
     }
 }
 
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
+impl Serialize for SemVer {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+struct SemVerVisitor;
+
+impl<'de> Visitor<'de> for SemVerVisitor {
+    type Value = SemVer;
+
+    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+        formatter.write_str("a version string in the format x.y.z")
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        SemVer::from_str(v).map_err(E::custom)
+    }
+}
+
+impl<'de> Deserialize<'de> for SemVer {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_str(SemVerVisitor)
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub struct SemVerRev(pub u8, pub u8, pub u8, pub u16);
 
 impl Display for SemVerRev {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}.{}.{}", self.0, self.1, self.2, self.3)
     }
 }
@@ -77,6 +110,32 @@ impl FromStr for SemVerRev {
         let rev = parts[3].parse::<u16>().map_err(parse_to_version_error)?;
 
         Ok(SemVerRev(major, minor, patch, rev))
+    }
+}
+
+impl Serialize for SemVerRev {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+struct SemVerRevVisitor;
+
+impl<'de> Visitor<'de> for SemVerRevVisitor {
+    type Value = SemVerRev;
+
+    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+        formatter.write_str("a version string in the format x.y.z.w")
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        SemVerRev::from_str(v).map_err(E::custom)
+    }
+}
+
+impl<'de> Deserialize<'de> for SemVerRev {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_str(SemVerRevVisitor)
     }
 }
 
@@ -181,5 +240,23 @@ mod tests {
         let result = SemVerRev::from_str(sem_ver_rev_str);
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn semver_serialize_to_string() {
+        let ver = SemVer(1, 2, 3);
+        let ser = serde_json::to_string(&ver)
+            .expect("Fail to serialize SemVer to String");
+
+        assert_eq!(format!("\"{}\"", ver.to_string()), ser);
+    }
+
+    #[test]
+    fn semver_rev_serialize_to_string() {
+        let ver = SemVerRev(1, 2, 3, 4);
+        let ser = serde_json::to_string(&ver)
+            .expect("Fail to serialize SemVerRev to String");
+
+        assert_eq!(format!("\"{}\"", ver.to_string()), ser);
     }
 }
