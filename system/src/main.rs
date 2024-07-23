@@ -2,17 +2,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use std::io;
+
 use clap::{Parser, Subcommand};
 
-use Operation::Uninstall;
-
-use crate::Operation::Install;
-use crate::package::packages::Package;
+use crate::package::{Os, Package, UBUNTU_X64};
+use crate::image::{Install, Uninstall};
+use crate::image::images::{ImageId, load_image};
 
 mod tmp;
 mod download;
 mod resources;
 mod cmd;
+mod image;
 mod package;
 
 #[derive(Parser)]
@@ -26,32 +28,52 @@ struct System {
 enum Operation {
     Install {
         #[arg(required = true)]
-        packages: Vec<String>,
+        images: Vec<ImageId>,
     },
     Uninstall {
         #[arg(required = true)]
-        packages: Vec<String>,
+        images: Vec<ImageId>,
     },
 }
 
+pub fn detect_os() -> io::Result<Option<Os>> {
+    if cfg!(target_os = "linux") && cfg!(target_arch = "x86_64") {
+        let os_release = std::fs::read_to_string("/etc/os-release")?;
+
+        if os_release.contains("Ubuntu") {
+            Ok(Some(UBUNTU_X64))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
 fn execute_operation(operation: Operation) -> Result<(), String> {
-    let get_package = |name: String| Package::from(name);
+    let os = detect_os()
+        .map_err(|io_error| io_error.to_string())?
+        .ok_or_else(|| "OS unsupported".to_string())?;
+
+    let load = |id: ImageId| load_image(id.clone(), os.clone())
+        .ok_or_else(|| format!("Image {} not supported", id));
 
     match operation {
-        Install { packages } => {
-            for package_name in packages {
-                let package = get_package(package_name)?;
+        Operation::Install { images: packages } => {
+            for id in packages {
+                let image = load(id)?;
 
-                println!("Installing {}...", package);
+                println!("Installing {}...", image);
+                image.install()?
             }
-
             Ok(())
         }
-        Uninstall { packages } => {
-            for package_name in packages {
-                let package = get_package(package_name)?;
+        Operation::Uninstall { images: packages } => {
+            for id in packages {
+                let image = load(id)?;
 
-                println!("Uninstalling {}...", package);
+                println!("Uninstalling {}...", image);
+                image.uninstall()?
             }
 
             Ok(())
