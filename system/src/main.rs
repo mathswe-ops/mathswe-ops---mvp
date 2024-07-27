@@ -6,9 +6,9 @@ use std::io;
 
 use clap::{Parser, Subcommand};
 
-use crate::package::{Os, Package, UBUNTU_X64};
-use crate::image::{Install, Uninstall};
-use crate::image::images::{ImageId, load_image};
+use crate::image::{ImageOps};
+use crate::image::repository::Repository;
+use crate::package::{Os, UBUNTU_X64};
 
 mod tmp;
 mod download;
@@ -28,11 +28,11 @@ struct System {
 enum Operation {
     Install {
         #[arg(required = true)]
-        images: Vec<ImageId>,
+        images: Vec<String>,
     },
     Uninstall {
         #[arg(required = true)]
-        images: Vec<ImageId>,
+        images: Vec<String>,
     },
 }
 
@@ -51,30 +51,36 @@ pub fn detect_os() -> io::Result<Option<Os>> {
 }
 
 fn execute_operation(operation: Operation) -> Result<(), String> {
+    type LoadResult = Result<Option<Box<dyn ImageOps>>, String>;
+
     let os = detect_os()
         .map_err(|io_error| io_error.to_string())?
         .ok_or_else(|| "OS unsupported".to_string())?;
 
-    let load = |id: ImageId| load_image(id.clone(), os.clone())
-        .map_err(|error| error.to_string())?
-        .ok_or_else(|| format!("Image {} not supported", id));
+    let load_image = |id_raw: String| -> LoadResult {
+        Repository::image_loader_from(&id_raw)
+            .and_then(|loader| loader
+                .load_image(os.clone())
+                .map_err(|error| error.to_string())
+            )
+    };
 
     match operation {
         Operation::Install { images: packages } => {
-            for id in packages {
-                let image = load(id)?;
+            for id_raw in packages {
+                let ops = load_image(id_raw)?.unwrap();
 
-                println!("Installing {}...", image);
-                image.install()?
+                println!("Installing {}...", ops.image());
+                ops.install()?
             }
             Ok(())
         }
         Operation::Uninstall { images: packages } => {
-            for id in packages {
-                let image = load(id)?;
+            for id_raw in packages {
+                let ops = load_image(id_raw)?.unwrap();
 
-                println!("Uninstalling {}...", image);
-                image.uninstall()?
+                println!("Uninstalling {}...", ops.image());
+                ops.uninstall()?
             }
 
             Ok(())
