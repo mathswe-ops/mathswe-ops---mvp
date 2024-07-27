@@ -3,7 +3,7 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt;
-use std::fmt::{Display, Formatter, Write};
+use std::fmt::{Display, Formatter};
 use std::num::ParseIntError;
 use std::str::FromStr;
 use de::Visitor;

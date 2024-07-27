@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Read};
 use std::path::Path;
-use clap::Parser;
 use sha2::{Digest, Sha256};
 
 #[derive(PartialEq, Clone, Debug)]
