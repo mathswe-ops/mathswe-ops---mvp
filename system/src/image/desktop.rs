@@ -17,7 +17,7 @@ pub enum DesktopImageId {
 }
 
 impl Display for DesktopImageId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let msg = match self {
             Zoom => "zoom",
         };
@@ -134,7 +134,7 @@ pub mod zoom {
         use std::path::PathBuf;
 
         use crate::download::Integrity;
-        use crate::image::{ImageInfoLoader, ImageOps};
+        use crate::image::{ImageInfoLoader};
         use crate::image::desktop::DesktopImage;
         use crate::image::desktop::DesktopImageId::Zoom;
         use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};

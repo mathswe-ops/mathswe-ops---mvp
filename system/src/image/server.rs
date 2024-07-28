@@ -18,7 +18,7 @@ pub enum ServerImageId {
 }
 
 impl Display for ServerImageId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let msg = match self {
             Rust => "rust",
         };
