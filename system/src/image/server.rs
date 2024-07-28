@@ -3,13 +3,13 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt::{Display, Formatter};
-use std::str::FromStr;
 use std::fmt;
+use std::str::FromStr;
 
 use ServerImageId::Rust;
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
-use crate::{impl_image};
+use crate::impl_image;
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -65,6 +65,7 @@ pub mod rust {
     use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Rust;
+    use crate::image_ops_impl;
     use crate::package::{Os, Package, Software};
 
     pub struct RustImage(ServerImage);
@@ -111,9 +112,5 @@ pub mod rust {
         }
     }
 
-    impl ImageOps for RustImage {
-        fn image(&self) -> Box<dyn Image> {
-            Box::new(self.0.clone())
-        }
-    }
+    impl ImageOps for RustImage { image_ops_impl!(); }
 }

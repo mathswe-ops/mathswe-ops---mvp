@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId::Zoom;
-use crate::{impl_image};
+use crate::impl_image;
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -65,6 +65,7 @@ pub mod zoom {
     use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::Zoom;
+    use crate::image_ops_impl;
     use crate::package::{Os, Package, SemVerRev, Software};
     use crate::package::LinuxType::Ubuntu;
     use crate::package::OsArch::X64;
@@ -126,11 +127,7 @@ pub mod zoom {
         }
     }
 
-    impl ImageOps for ZoomImage {
-        fn image(&self) -> Box<dyn Image> {
-            Box::new(self.0.clone())
-        }
-    }
+    impl ImageOps for ZoomImage { image_ops_impl!(); }
 
     #[cfg(test)]
     mod tests {

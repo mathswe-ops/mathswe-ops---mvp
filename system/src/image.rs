@@ -73,6 +73,15 @@ pub trait ImageOps: Install + Uninstall {
     fn image(&self) -> Box<dyn Image>;
 }
 
+#[macro_export]
+macro_rules! image_ops_impl {
+    () => {
+        fn image(&self) -> Box<dyn Image> {
+            Box::new(self.0.clone())
+        }
+    };
+}
+
 #[derive(Debug)]
 pub enum ImageInfoError {
     IoError(String),
