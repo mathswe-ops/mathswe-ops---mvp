@@ -4,11 +4,13 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-
+use ServerImageId::Rust;
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
 use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::zoom::ZoomImage;
+use crate::image::server::rust::RustImage;
+use crate::image::server::ServerImageId;
 use crate::package::Os;
 
 struct RepositoryImageLoader<T> where T: Display + ToImageId {
@@ -40,14 +42,39 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
 
 impl ImageLoader for RepositoryImageLoader<DesktopImageId> {}
 
+impl Display for RepositoryImageLoader<ServerImageId> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("Server Image ID: {}", self.id))
+    }
+}
+
+impl ToImageId for RepositoryImageLoader<ServerImageId> {
+    fn to_image_id(&self) -> ImageId {
+        self.id.to_image_id()
+    }
+}
+
+impl LoadImage for RepositoryImageLoader<ServerImageId> {
+    fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+        let image = match self.id {
+            Rust => RustImage::from(os)
+        };
+
+        Ok(image)
+    }
+}
+
+impl ImageLoader for RepositoryImageLoader<ServerImageId> {}
+
 pub struct Repository;
 
 impl Repository {
     pub fn image_loader_from(s: &str) -> Result<Box<dyn ImageLoader>, String> {
         if let Some(id) = DesktopImageId::str_find(s) {
             Ok(Box::new(RepositoryImageLoader { id }))
-        }
-        else {
+        } else if let Some(id) = ServerImageId::str_find(s) {
+            Ok(Box::new(RepositoryImageLoader { id }))
+        } else {
             Err(format!("String ID {} not found in the image repository", s))
         }
     }
