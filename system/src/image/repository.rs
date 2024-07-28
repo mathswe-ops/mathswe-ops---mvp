@@ -71,11 +71,19 @@ pub struct Repository;
 impl Repository {
     pub fn image_loader_from(s: &str) -> Result<Box<dyn ImageLoader>, String> {
         if let Some(id) = DesktopImageId::str_find(s) {
-            Ok(Box::new(RepositoryImageLoader { id }))
+            Ok(Self::box_it(id))
         } else if let Some(id) = ServerImageId::str_find(s) {
-            Ok(Box::new(RepositoryImageLoader { id }))
+            Ok(Self::box_it(id))
         } else {
             Err(format!("String ID {} not found in the image repository", s))
         }
+    }
+
+    fn box_it<T>(id: T) -> Box<dyn ImageLoader>
+    where
+        T: Display + ToImageId + 'static,
+        RepositoryImageLoader<T>: ImageLoader,
+    {
+        Box::new(RepositoryImageLoader { id })
     }
 }
