@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId::Zoom;
-use crate::impl_display_for_image;
+use crate::{impl_image};
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -53,17 +53,7 @@ impl ToImageId for DesktopImageId {
 #[derive(Clone)]
 pub struct DesktopImage(DesktopImageId, Package);
 
-impl_display_for_image!(DesktopImage);
-
-impl Image for DesktopImage {
-    fn id(&self) -> ImageId {
-        self.0.to_image_id()
-    }
-
-    fn package(&self) -> Package {
-        self.1.clone()
-    }
-}
+impl_image!(DesktopImage);
 
 pub mod zoom {
     use reqwest::Url;

@@ -9,7 +9,7 @@ use std::fmt;
 use ServerImageId::Rust;
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
-use crate::impl_display_for_image;
+use crate::{impl_image};
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -54,17 +54,7 @@ impl ToImageId for ServerImageId {
 #[derive(Clone)]
 pub struct ServerImage(ServerImageId, Package);
 
-impl_display_for_image!(ServerImage);
-
-impl Image for ServerImage {
-    fn id(&self) -> ImageId {
-        self.0.to_image_id()
-    }
-
-    fn package(&self) -> Package {
-        self.1.clone()
-    }
-}
+impl_image!(ServerImage);
 
 pub mod rust {
     use reqwest::Url;

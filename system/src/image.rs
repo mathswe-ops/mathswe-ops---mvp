@@ -41,11 +41,21 @@ pub trait Image: Display {
 }
 
 #[macro_export]
-macro_rules! impl_display_for_image {
-    ($t:ty) => {
-        impl Display for $t {
+macro_rules! impl_image {
+    ($struct_name:ident) => {
+        impl Display for $struct_name {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
                 write!(f, "Image: {:?}, Package: {:?}", self.id(), self.package())
+            }
+        }
+
+        impl Image for $struct_name {
+            fn id(&self) -> ImageId {
+                self.0.to_image_id()
+            }
+
+            fn package(&self) -> Package {
+                self.1.clone()
             }
         }
     };
