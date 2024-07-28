@@ -15,6 +15,7 @@ use crate::package::{Os, Package};
 
 pub(crate) mod repository;
 mod desktop;
+mod server;
 
 #[derive(PartialEq, Clone)]
 pub struct ImageId(String);
