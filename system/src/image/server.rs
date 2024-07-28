@@ -4,10 +4,12 @@
 
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use std::fmt;
 
 use ServerImageId::Rust;
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
+use crate::impl_display_for_image;
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -52,11 +54,7 @@ impl ToImageId for ServerImageId {
 #[derive(Clone)]
 pub struct ServerImage(ServerImageId, Package);
 
-impl Display for ServerImage {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format!("Image: {}, Package: {}", self.id(), self.package()))
-    }
-}
+impl_display_for_image!(ServerImage);
 
 impl Image for ServerImage {
     fn id(&self) -> ImageId {

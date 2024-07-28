@@ -17,7 +17,7 @@ pub(crate) mod repository;
 mod desktop;
 mod server;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ImageId(String);
 
 impl Display for ImageId {
@@ -38,6 +38,17 @@ pub trait Image: Display {
     fn id(&self) -> ImageId;
 
     fn package(&self) -> Package;
+}
+
+#[macro_export]
+macro_rules! impl_display_for_image {
+    ($t:ty) => {
+        impl Display for $t {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(f, "Image: {:?}, Package: {:?}", self.id(), self.package())
+            }
+        }
+    };
 }
 
 pub trait Install {

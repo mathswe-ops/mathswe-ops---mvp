@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use crate::image::{Image, ImageId, StrFind, ToImageId };
+use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId::Zoom;
+use crate::impl_display_for_image;
 use crate::package::Package;
 
 #[derive(Clone, Debug)]
@@ -51,11 +53,7 @@ impl ToImageId for DesktopImageId {
 #[derive(Clone)]
 pub struct DesktopImage(DesktopImageId, Package);
 
-impl Display for DesktopImage {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format!("Image: {}, Package: {}", self.id(), self.package()))
-    }
-}
+impl_display_for_image!(DesktopImage);
 
 impl Image for DesktopImage {
     fn id(&self) -> ImageId {
@@ -149,10 +147,10 @@ pub mod zoom {
         use std::path::PathBuf;
 
         use crate::download::Integrity;
+        use crate::image::{ImageInfoLoader, ImageOps};
         use crate::image::desktop::DesktopImage;
         use crate::image::desktop::DesktopImageId::Zoom;
         use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};
-        use crate::image::ImageInfoLoader;
         use crate::package::{SemVerRev, UBUNTU_X64};
 
         #[test]
