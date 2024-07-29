@@ -62,6 +62,7 @@ pub mod zoom {
     use Os::Linux;
 
     use crate::download::{DownloadRequest, Integrity};
+    use crate::download::gpg::GpgKey;
     use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::Zoom;
@@ -73,6 +74,8 @@ pub mod zoom {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ZoomInfo {
         version: SemVerRev,
+        public_key_version: String,
+        key_fingerprint: String,
     }
 
     pub struct ZoomImage(DesktopImage);
@@ -84,7 +87,10 @@ pub mod zoom {
             }.to_string()
         }
 
-        pub fn new(os: Os, ZoomInfo { version }: ZoomInfo) -> ZoomImage {
+        pub fn new(
+            os: Os,
+            ZoomInfo { version, public_key_version, key_fingerprint }: ZoomInfo,
+        ) -> ZoomImage {
             let id = Zoom;
             let pkg_id = id.to_string();
             let fetch_url = format!(
@@ -92,6 +98,8 @@ pub mod zoom {
                 version,
                 Self::filename(os.clone())
             );
+            let gpg_key_url = Url::parse(format!("https://zoom.us/linux/download/pubkey?version={}", public_key_version).as_str()).unwrap();
+            let gpg_key = GpgKey::new(gpg_key_url, key_fingerprint);
 
             ZoomImage(
                 DesktopImage(
@@ -101,7 +109,7 @@ pub mod zoom {
                         os,
                         Software::new("Zoom Video Communications, Inc", "Zoom", &version.to_string()),
                         Url::parse("https://zoom.us/download").unwrap(),
-                        DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::Gpg(gpg_key)).unwrap(),
                     )))
         }
 
@@ -132,7 +140,8 @@ pub mod zoom {
     #[cfg(test)]
     mod tests {
         use std::path::PathBuf;
-
+        use reqwest::Url;
+        use crate::download::gpg::GpgKey;
         use crate::download::Integrity;
         use crate::image::{ImageInfoLoader};
         use crate::image::desktop::DesktopImage;
@@ -155,16 +164,23 @@ pub mod zoom {
 
         #[test]
         fn creates_zoom_image() {
-            let zoom_info = ZoomInfo { version: SemVerRev(6, 1, 1, 443) };
+            let zoom_info = ZoomInfo {
+                version: SemVerRev(6, 1, 1, 443),
+                public_key_version: "5-12-6".to_string(),
+                key_fingerprint: "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481".to_string(),
+            };
             let ZoomImage(DesktopImage(id, package)) = ZoomImage::new(UBUNTU_X64, zoom_info);
+            let expected_gpg_key = GpgKey::new(
+                Url::parse("https://zoom.us/linux/download/pubkey?version=5-12-6").unwrap(),
+                "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481".to_string(),
+            );
 
             assert_eq!("zoom", id.to_string());
             assert_eq!("zoom", package.name);
             assert_eq!("Zoom", package.software.name);
             assert_eq!("6.1.1.443", package.software.version);
             assert_eq!("https://zoom.us/client/6.1.1.443/zoom_amd64.deb", package.fetch.url().as_str());
-            assert_eq!(Integrity::None, package.fetch.integrity());
-            todo!("must implement GPG")
+            assert_eq!(Integrity::Gpg(expected_gpg_key), package.fetch.integrity());
         }
     }
 }

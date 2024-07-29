@@ -11,15 +11,16 @@ use std::path::{Path, PathBuf};
 use reqwest::{blocking, Url};
 
 use DownloadRequestError::{InsecureProtocol, InvalidUrl};
-
+use crate::download::gpg::GpgKey;
 use crate::download::hashing::Hash;
 
 pub mod hashing;
-mod gpg;
+pub mod gpg;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Integrity {
     Hash(Hash),
+    Gpg(GpgKey),
     None,
 }
 
@@ -29,6 +30,10 @@ impl Integrity {
             Integrity::Hash(hash) => hash
                 .matches(file_path)
                 .map_err(|error| error.to_string()),
+            Integrity::Gpg(key) => {
+                key.install()?;
+                key.verify(file_path)
+            }
             Integrity::None => Ok(true),
         }
     }
