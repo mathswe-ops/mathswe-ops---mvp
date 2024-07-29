@@ -24,9 +24,11 @@ pub enum Integrity {
 }
 
 impl Integrity {
-    pub fn check(&self, file_path: &Path) -> io::Result<bool> {
+    pub fn check(&self, file_path: &Path) -> Result<bool, String> {
         match self {
-            Integrity::Hash(hash) => hash.matches(file_path),
+            Integrity::Hash(hash) => hash
+                .matches(file_path)
+                .map_err(|error| error.to_string()),
             Integrity::None => Ok(true),
         }
     }
@@ -121,6 +123,7 @@ impl Downloader {
                 self.req
                     .integrity
                     .check(self.path.as_path())
+                    .map_err(io_err)
                     .and_then(|check| {
                         if check {
                             Ok(())
