@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use std::path::Path;
+
 use reqwest::Url;
 
 use crate::cmd::exec_cmd;
@@ -15,6 +17,34 @@ pub struct GpgKey {
 impl GpgKey {
     pub fn new(key_url: Url, key_fingerprint: String) -> Self {
         GpgKey { url: key_url, fingerprint: key_fingerprint }
+    }
+
+    pub fn verify(&self, file_path: &Path) -> Result<bool, String> {
+        let cmd_output = exec_cmd("gpg", &["--verify", file_path.to_str().unwrap()])
+            .map_err(|error| error.to_string())?;
+
+        let stdout = String::from_utf8_lossy(&cmd_output.stdout);
+
+        let out_contains_all = |search: &[&str]| search
+            .iter()
+            .all(|value| stdout.contains(value));
+
+        let out_contains_required_strings = out_contains_all(&[
+            "gpg: Signature made",
+            "gpg: Good signature from",
+            "Primary key fingerprint:",
+        ]);
+
+        let out_has_no_signature_error = !stdout.contains("gpg: verify signatures failed");
+
+        let out_has_fingerprint = self.gpg_output_contains_fingerprint(&stdout);
+
+        let correct
+            = out_contains_required_strings
+            && out_has_no_signature_error
+            && out_has_fingerprint;
+
+        Ok(correct)
     }
 
     pub fn install(&self) -> Result<(), String> {
