@@ -15,6 +15,7 @@ use DownloadRequestError::{InsecureProtocol, InvalidUrl};
 use crate::download::hashing::Hash;
 
 pub mod hashing;
+mod gpg;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Integrity {
