@@ -6,6 +6,7 @@ use reqwest::Url;
 
 use crate::cmd::exec_cmd;
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct GpgKey {
     url: Url,
     fingerprint: String,
