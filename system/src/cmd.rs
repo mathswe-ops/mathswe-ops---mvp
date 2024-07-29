@@ -3,8 +3,8 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt::{Display, Formatter};
-use std::io::Error;
-use std::process::{Child, Command, Output};
+use std::io::{Error, Stdout};
+use std::process::{Child, Command, Output, Stdio};
 
 use CmdErrorCause::UnsuccessfulStatus;
 
@@ -65,6 +65,9 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
 
     Command::new(cmd)
         .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .map_err(io_err(StartFail))
         .and_then(wait_child)
