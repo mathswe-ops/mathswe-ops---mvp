@@ -103,12 +103,11 @@ impl Downloader {
         Downloader { req, path }
     }
 
-    pub fn from(req: DownloadRequest) -> io::Result<Self> {
+    pub fn from(req: DownloadRequest, tmp_working_dir: &TmpWorkingDir) -> Downloader {
         let filename = req.filename().unwrap();
-        let path = TmpWorkingDir::new()?
-            .join(filename.as_ref());
+        let path = tmp_working_dir.join(filename.as_ref());
 
-        Ok(Self::new(req, path))
+        Self::new(req, path)
     }
 
     pub fn to_file(&self) -> io::Result<File> {
@@ -210,7 +209,8 @@ mod tests {
         let req = DownloadRequest::new(url, Integrity::None)
             .expect("Fail to create download request");
 
-        let downloader = Downloader::from(req)?;
+        let tmp = TmpWorkingDir::new()?;
+        let downloader = Downloader::from(req, &tmp);
         let download_path = downloader.path.to_str().unwrap();
 
         assert!(download_path.contains("/tmp"));
