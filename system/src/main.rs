@@ -16,6 +16,7 @@ mod resources;
 mod cmd;
 mod image;
 mod package;
+mod os;
 
 #[derive(Parser)]
 #[command(name = "system")]
