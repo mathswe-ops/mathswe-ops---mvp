@@ -71,6 +71,12 @@ pub trait Uninstall {
 
 pub trait ImageOps: Install + Uninstall {
     fn image(&self) -> Box<dyn Image>;
+
+    fn reinstall(&self) -> Result<(), String> {
+        self.uninstall()?;
+        self.install()?;
+        Ok(())
+    }
 }
 
 #[macro_export]
