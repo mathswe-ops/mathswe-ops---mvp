@@ -4,6 +4,7 @@
 
 use LinuxType::Ubuntu;
 use OsArch::X64;
+
 use crate::os::Os::Linux;
 
 #[derive(Clone, Debug)]
@@ -22,3 +23,12 @@ pub enum Os {
 }
 
 pub const UBUNTU_X64: Os = Linux(X64, Ubuntu);
+
+pub enum PkgType {
+    Deb
+}
+
+pub struct OsPkg {
+    pub pkg_type: PkgType,
+    pub name: String,
+}

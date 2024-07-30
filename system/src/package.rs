@@ -11,7 +11,7 @@ use reqwest::Url;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::download::DownloadRequest;
-use crate::os::Os;
+use crate::os::{Os, OsPkg, PkgType};
 use crate::package::VersionError::InvalidDigit;
 
 #[derive(Debug)]
@@ -162,6 +162,10 @@ pub struct Package {
 impl Package {
     pub fn new(name: &str, os: Os, software: Software, doc: Url, fetch: DownloadRequest) -> Package {
         Package { name: name.to_string(), os, software, doc, fetch }
+    }
+
+    pub fn to_os_pkg(&self, pkg_type: PkgType) -> OsPkg {
+        OsPkg{ pkg_type, name: self.name.clone() }
     }
 }
 
