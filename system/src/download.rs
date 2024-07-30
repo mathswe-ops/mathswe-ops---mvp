@@ -94,8 +94,8 @@ impl DownloadRequest {
 }
 
 pub struct Downloader {
-    req: DownloadRequest,
-    path: PathBuf,
+    pub req: DownloadRequest,
+    pub path: PathBuf,
 }
 
 impl Downloader {
