@@ -150,7 +150,7 @@ impl Downloader {
                         if check {
                             Ok(())
                         } else {
-                            Err(io_err(format!("Downloaded file {} failed {:?} integrity check", filename, self.req.integrity)))
+                            Err(io_err(format!("Downloaded file {} failed integrity check {:?}", filename, self.req.integrity)))
                         }
                     })
             })
