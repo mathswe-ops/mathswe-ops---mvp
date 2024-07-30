@@ -3,7 +3,7 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt::{Display, Formatter};
-use std::io::{Error, Stdout};
+use std::io::Error;
 use std::process::{Child, Command, Output, Stdio};
 
 use CmdErrorCause::UnsuccessfulStatus;
