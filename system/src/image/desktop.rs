@@ -58,7 +58,6 @@ impl_image!(DesktopImage);
 pub mod zoom {
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
-
     use crate::download::{DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
     use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
@@ -69,6 +68,7 @@ pub mod zoom {
     use crate::os::Os;
     use crate::os::Os::Linux;
     use crate::os::OsArch::X64;
+    use crate::os::PkgType::Deb;
     use crate::package::{Package, SemVerRev, Software};
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -131,7 +131,7 @@ pub mod zoom {
 
     impl Uninstall for ZoomImage {
         fn uninstall(&self) -> Result<(), String> {
-            todo!()
+            self.0.package().to_os_pkg(Deb).uninstall()
         }
     }
 

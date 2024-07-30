@@ -4,7 +4,8 @@
 
 use LinuxType::Ubuntu;
 use OsArch::X64;
-
+use PkgType::Deb;
+use crate::cmd::exec_cmd;
 use crate::os::Os::Linux;
 
 #[derive(Clone, Debug)]
@@ -31,4 +32,36 @@ pub enum PkgType {
 pub struct OsPkg {
     pub pkg_type: PkgType,
     pub name: String,
+}
+
+impl OsPkg {
+    pub fn uninstall(&self) -> Result<(), String> {
+        match self.pkg_type {
+            Deb => Self::uninstall_deb(&self.name)
+        }
+    }
+
+    fn uninstall_deb(name: &str) -> Result<(), String> {
+        println!("{}", format!("Removing package {}", name));
+
+        let output = exec_cmd(
+            "sudo",
+            &["apt-get", "--yes", "remove", name],
+        ).map_err(|error| error.to_string())?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        println!("{}", stdout);
+
+        println!("Cleaning up no longer required packages");
+
+        let output = exec_cmd(
+            "sudo",
+            &["apt-get", "--yes", "autoremove"],
+        ).map_err(|error| error.to_string())?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        println!("{}", stdout);
+
+        Ok(())
+    }
 }

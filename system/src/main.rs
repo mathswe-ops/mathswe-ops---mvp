@@ -84,7 +84,7 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
             for id_raw in packages {
                 let ops = load_image(id_raw)?.unwrap();
 
-                println!("Uninstalling {}...", ops.image());
+                println!("Uninstalling {}...", ops.image().id());
                 ops.uninstall()?
             }
 
