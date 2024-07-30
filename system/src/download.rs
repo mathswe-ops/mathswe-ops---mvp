@@ -13,6 +13,7 @@ use reqwest::{blocking, Url};
 use DownloadRequestError::{InsecureProtocol, InvalidUrl};
 use crate::download::gpg::GpgKey;
 use crate::download::hashing::Hash;
+use crate::tmp::TmpWorkingDir;
 
 pub mod hashing;
 pub mod gpg;
@@ -83,6 +84,13 @@ impl DownloadRequest {
     pub fn integrity(&self) -> Integrity {
         self.integrity.clone()
     }
+
+    pub fn filename(&self) -> Option<String> {
+        self.url
+            .path_segments()
+            .and_then(|segments| segments.last())
+            .map(|s| s.to_string())
+    }
 }
 
 pub struct Downloader {
@@ -95,16 +103,26 @@ impl Downloader {
         Downloader { req, path }
     }
 
+    pub fn from(req: DownloadRequest) -> io::Result<Self> {
+        let filename = req.filename().unwrap();
+        let path = TmpWorkingDir::new()?
+            .join(filename.as_ref());
+
+        Ok(Self::new(req, path))
+    }
+
     pub fn to_file(&self) -> io::Result<File> {
         File::create_new(&self.path)
     }
 
-    pub fn download_blocking(&self, filename: &str) -> io::Result<()> {
+    pub fn download_blocking(&self) -> io::Result<()> {
         let format_err_msg = |msg: String, target: String| { format!("{}: {}", msg, target) };
 
         let io_err = |msg: String| { io::Error::new(ErrorKind::Other, msg) };
 
         let to_io_err = |msg: String| |err: reqwest::Error| io_err(format_err_msg(msg, err.to_string()));
+
+        let filename = self.req.filename().unwrap_or_else(|| "".to_string());
 
         let url = &self.req.url;
 
@@ -177,6 +195,31 @@ mod tests {
     }
 
     #[test]
+    fn reads_url_path_filename() -> Result<(), DownloadRequestError> {
+        let url = "https://example.com/route/file.txt";
+        let req = DownloadRequest::new(url, Integrity::None)?;
+
+        assert_eq!(Some("file.txt".to_string()), req.filename());
+
+        Ok(())
+    }
+
+    #[test]
+    fn creates_downloader_to_tmp_file() -> io::Result<()> {
+        let url = "https://example.com/route/file.txt";
+        let req = DownloadRequest::new(url, Integrity::None)
+            .expect("Fail to create download request");
+
+        let downloader = Downloader::from(req)?;
+        let download_path = downloader.path.to_str().unwrap();
+
+        assert!(download_path.contains("/tmp"));
+        assert!(download_path.contains("/file.txt"));
+
+        Ok(())
+    }
+
+    #[test]
     fn downloads_file() -> io::Result<()> {
         let base_url = "https://raw.githubusercontent.com/mathswe-ops/mathswe-ops---mvp/main";
         let filename = "test_file.txt";
@@ -190,7 +233,7 @@ mod tests {
 
         let downloader = Downloader::new(req, temp_file_path.clone());
 
-        downloader.download_blocking(filename)?;
+        downloader.download_blocking()?;
         assert!(temp_file_path.exists());
 
         let test_file_path = Path::new("resources")
@@ -218,7 +261,7 @@ mod tests {
 
         let downloader = Downloader::new(req, temp_file_path.clone());
 
-        let res = downloader.download_blocking(filename);
+        let res = downloader.download_blocking();
 
         match res {
             Ok(_) => { panic!("It could download non-existent file!") }
