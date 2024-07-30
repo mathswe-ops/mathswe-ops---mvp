@@ -23,12 +23,13 @@ impl GpgKey {
         let cmd_output = exec_cmd("gpg", &["--verify", file_path.to_str().unwrap()])
             .map_err(|error| error.to_string())?;
 
-        // Use stderr for informational messages
+        let stdout = String::from_utf8_lossy(&cmd_output.stdout);
         let stderr = String::from_utf8_lossy(&cmd_output.stderr);
+        let output = if !stdout.trim().is_empty() { stdout } else { stderr };
 
         let out_contains_all = |search: &[&str]| search
             .iter()
-            .all(|value| stderr.contains(value));
+            .all(|value| output.contains(value));
 
         let out_contains_required_strings = out_contains_all(&[
             "gpg: Signature made",
@@ -36,9 +37,9 @@ impl GpgKey {
             "Primary key fingerprint:",
         ]);
 
-        let out_has_no_signature_error = !stderr.contains("gpg: verify signatures failed");
+        let out_has_no_signature_error = !output.contains("gpg: verify signatures failed");
 
-        let out_has_fingerprint = self.gpg_output_contains_fingerprint(&stderr);
+        let out_has_fingerprint = self.gpg_output_contains_fingerprint(&output);
 
         let correct
             = out_contains_required_strings
