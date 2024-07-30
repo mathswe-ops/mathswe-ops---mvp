@@ -58,7 +58,9 @@ impl_image!(DesktopImage);
 pub mod zoom {
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
-    use crate::download::{DownloadRequest, Integrity};
+
+    use crate::cmd::exec_cmd;
+    use crate::download::{Downloader, DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
     use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
     use crate::image::desktop::DesktopImage;
@@ -70,6 +72,7 @@ pub mod zoom {
     use crate::os::OsArch::X64;
     use crate::os::PkgType::Deb;
     use crate::package::{Package, SemVerRev, Software};
+    use crate::tmp::TmpWorkingDir;
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ZoomInfo {
@@ -125,7 +128,36 @@ pub mod zoom {
 
     impl Install for ZoomImage {
         fn install(&self) -> Result<(), String> {
-            todo!()
+            let package = self.0.package();
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let downloader = Downloader::from(package.fetch.clone(), &tmp);
+            let file_path = downloader.path.clone();
+
+            println!("Downloading Zoom...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())?;
+
+            println!("Installing Zoom...");
+
+            package
+                .to_os_pkg(Deb)
+                .install(&file_path)?;
+
+            println!("Installing unmet dependencies...");
+
+            let output = exec_cmd(
+                "sudo",
+                &["apt-get", "--fix-broken", "--yes", "install"],
+            ).map_err(|error| error.to_string())?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            Ok(())
         }
     }
 
@@ -150,7 +182,7 @@ pub mod zoom {
         use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};
         use crate::image::ImageInfoLoader;
         use crate::os::UBUNTU_X64;
-        use crate::package::{SemVerRev};
+        use crate::package::SemVerRev;
 
         #[test]
         fn loads_zoom_image_info() {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use std::path::PathBuf;
 use LinuxType::Ubuntu;
 use OsArch::X64;
 use PkgType::Deb;
@@ -35,14 +36,32 @@ pub struct OsPkg {
 }
 
 impl OsPkg {
+    pub fn install(&self, installer_path: &PathBuf) -> Result<(), String> {
+        match self.pkg_type {
+            Deb => Self::install_deb(installer_path)
+        }
+    }
+
     pub fn uninstall(&self) -> Result<(), String> {
         match self.pkg_type {
             Deb => Self::uninstall_deb(&self.name)
         }
     }
 
+    fn install_deb(installer: &PathBuf) -> Result<(), String> {
+        let output = exec_cmd(
+            "sudo",
+            &["apt-get", "--yes", "install", installer.to_str().unwrap()],
+        ).map_err(|error| error.to_string())?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        println!("{}", stdout);
+
+        Ok(())
+    }
+
     fn uninstall_deb(name: &str) -> Result<(), String> {
-        println!("{}", format!("Removing package {}", name));
+        println!("{}", format!("Removing package {}...", name));
 
         let output = exec_cmd(
             "sudo",
@@ -52,7 +71,7 @@ impl OsPkg {
 
         println!("{}", stdout);
 
-        println!("Cleaning up no longer required packages");
+        println!("Cleaning up no longer required packages...");
 
         let output = exec_cmd(
             "sudo",
