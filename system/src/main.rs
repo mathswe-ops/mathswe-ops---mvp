@@ -6,9 +6,9 @@ use std::io;
 
 use clap::{Parser, Subcommand};
 
-use crate::image::{ImageOps};
+use crate::image::ImageOps;
 use crate::image::repository::Repository;
-use crate::package::{Os, UBUNTU_X64};
+use crate::os::{Os, UBUNTU_X64};
 
 mod tmp;
 mod download;

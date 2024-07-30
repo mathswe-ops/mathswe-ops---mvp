@@ -11,7 +11,7 @@ use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::rust::RustImage;
 use crate::image::server::ServerImageId;
-use crate::package::Os;
+use crate::os::Os;
 
 struct RepositoryImageLoader<T> where T: Display + ToImageId {
     id: T,

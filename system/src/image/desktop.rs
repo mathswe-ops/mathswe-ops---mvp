@@ -59,17 +59,17 @@ pub mod zoom {
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
 
-    use Os::Linux;
-
     use crate::download::{DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
     use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::Zoom;
     use crate::image_ops_impl;
-    use crate::package::{Os, Package, SemVerRev, Software};
-    use crate::package::LinuxType::Ubuntu;
-    use crate::package::OsArch::X64;
+    use crate::os::LinuxType::Ubuntu;
+    use crate::os::Os;
+    use crate::os::Os::Linux;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, SemVerRev, Software};
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ZoomInfo {
@@ -140,14 +140,17 @@ pub mod zoom {
     #[cfg(test)]
     mod tests {
         use std::path::PathBuf;
+
         use reqwest::Url;
+
         use crate::download::gpg::GpgKey;
         use crate::download::Integrity;
-        use crate::image::{ImageInfoLoader};
         use crate::image::desktop::DesktopImage;
         use crate::image::desktop::DesktopImageId::Zoom;
         use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};
-        use crate::package::{SemVerRev, UBUNTU_X64};
+        use crate::image::ImageInfoLoader;
+        use crate::os::UBUNTU_X64;
+        use crate::package::{SemVerRev};
 
         #[test]
         fn loads_zoom_image_info() {

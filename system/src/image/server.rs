@@ -59,14 +59,14 @@ impl_image!(ServerImage);
 pub mod rust {
     use reqwest::Url;
 
-    use Os::Linux;
-
     use crate::download::{DownloadRequest, Integrity};
     use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Rust;
     use crate::image_ops_impl;
-    use crate::package::{Os, Package, Software};
+    use crate::os::Os::Linux;
+    use crate::os::Os;
+    use crate::package::{Package, Software};
 
     pub struct RustImage(ServerImage);
 

@@ -11,9 +11,7 @@ use reqwest::Url;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::download::DownloadRequest;
-use crate::package::LinuxType::Ubuntu;
-use crate::package::Os::Linux;
-use crate::package::OsArch::X64;
+use crate::os::Os;
 use crate::package::VersionError::InvalidDigit;
 
 #[derive(Debug)]
@@ -151,23 +149,6 @@ impl Software {
         Software { provider: provider.to_string(), name: name.to_string(), version: version.to_string() }
     }
 }
-
-#[derive(Clone, Debug)]
-pub enum OsArch {
-    X64
-}
-
-#[derive(Clone, Debug)]
-pub enum LinuxType {
-    Ubuntu
-}
-
-#[derive(Clone, Debug)]
-pub enum Os {
-    Linux(OsArch, LinuxType)
-}
-
-pub const UBUNTU_X64: Os = Linux(X64, Ubuntu);
 
 #[derive(Clone, Debug)]
 pub struct Package {

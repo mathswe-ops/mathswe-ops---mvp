@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use serde::de::DeserializeOwned;
 
 use ImageInfoError::{IoError, SerdeError};
-
-use crate::package::{Os, Package};
+use crate::os::Os;
+use crate::package::{Package};
 
 pub(crate) mod repository;
 mod desktop;
