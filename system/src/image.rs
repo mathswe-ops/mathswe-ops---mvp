@@ -117,7 +117,11 @@ impl ImageInfoLoader {
 
     pub fn load<D: DeserializeOwned, T: ToImageId>(&self, id: T) -> Result<D, ImageInfoError> {
         let info_path = self.path(id);
-        let file = File::open(info_path).map_err(|error| IoError(error.to_string()))?;
+        let file = File::open(info_path.clone())
+            .map_err(|error| IoError(
+                format!("Fail to read image info at {:?}.\nCause: {}", info_path, error.to_string())
+            ))?;
+
         let reader = BufReader::new(file);
 
         serde_json::from_reader(reader)
