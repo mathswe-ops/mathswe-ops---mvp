@@ -34,6 +34,10 @@ enum Operation {
         #[arg(required = true)]
         images: Vec<String>,
     },
+    Reinstall {
+        #[arg(required = true)]
+        images: Vec<String>,
+    },
 }
 
 pub fn detect_os() -> io::Result<Option<Os>> {
@@ -81,6 +85,16 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
 
                 println!("Uninstalling {}...", ops.image());
                 ops.uninstall()?
+            }
+
+            Ok(())
+        }
+        Operation::Reinstall { images: packages } => {
+            for id_raw in packages {
+                let ops = load_image(id_raw)?.unwrap();
+
+                println!("Reinstalling {}...", ops.image());
+                ops.reinstall()?
             }
 
             Ok(())
