@@ -21,7 +21,7 @@ pub enum VersionError {
 }
 
 impl Display for VersionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self)
     }
 }
@@ -30,7 +30,7 @@ impl Display for VersionError {
 pub struct SemVer(pub u8, pub u8, pub u8);
 
 impl Display for SemVer {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}.{}", self.0, self.1, self.2)
     }
 }
