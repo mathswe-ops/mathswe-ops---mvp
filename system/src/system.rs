@@ -31,50 +31,52 @@ pub enum Operation {
     },
 }
 
-pub fn execute_operation(operation: Operation) -> Result<(), String> {
-    type LoadResult = Result<Option<Box<dyn ImageOps>>, String>;
+impl Operation {
+    pub fn execute(&self) -> Result<(), String> {
+        type LoadResult = Result<Option<Box<dyn ImageOps>>, String>;
 
-    let os = detect_os()
-        .map_err(|io_error| io_error.to_string())?
-        .ok_or_else(|| "OS unsupported".to_string())?;
+        let os = detect_os()
+            .map_err(|io_error| io_error.to_string())?
+            .ok_or_else(|| "OS unsupported".to_string())?;
 
-    let load_image = |id_raw: String| -> LoadResult {
-        Repository::image_loader_from(&id_raw)
-            .and_then(|loader| loader
-                .load_image(os.clone())
-                .map_err(|error| error.to_string())
-            )
-    };
+        let load_image = |id_raw: String| -> LoadResult {
+            Repository::image_loader_from(&id_raw)
+                .and_then(|loader| loader
+                    .load_image(os.clone())
+                    .map_err(|error| error.to_string())
+                )
+        };
 
-    match operation {
-        Install { images } => {
-            for id_raw in images {
-                let ops = load_image(id_raw)?.unwrap();
+        match self {
+            Install { images } => {
+                for id_raw in images {
+                    let ops = load_image(id_raw.to_string())?.unwrap();
 
-                println!("Installing {}...", ops.image());
-                ops.install()?
+                    println!("Installing {}...", ops.image());
+                    ops.install()?
+                }
+                Ok(())
             }
-            Ok(())
-        }
-        Uninstall { images } => {
-            for id_raw in images {
-                let ops = load_image(id_raw)?.unwrap();
+            Uninstall { images } => {
+                for id_raw in images {
+                    let ops = load_image(id_raw.to_string())?.unwrap();
 
-                println!("Uninstalling {}...", ops.image().id());
-                ops.uninstall()?
+                    println!("Uninstalling {}...", ops.image().id());
+                    ops.uninstall()?
+                }
+
+                Ok(())
             }
+            Reinstall { images } => {
+                for id_raw in images {
+                    let ops = load_image(id_raw.to_string())?.unwrap();
 
-            Ok(())
-        }
-        Reinstall { images } => {
-            for id_raw in images {
-                let ops = load_image(id_raw)?.unwrap();
+                    println!("Reinstalling {}...", ops.image());
+                    ops.reinstall()?
+                }
 
-                println!("Reinstalling {}...", ops.image());
-                ops.reinstall()?
+                Ok(())
             }
-
-            Ok(())
         }
     }
 }

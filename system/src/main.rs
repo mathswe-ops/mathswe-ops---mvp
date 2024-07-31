@@ -5,7 +5,7 @@
 
 use clap::{Parser};
 
-use crate::system::{execute_operation, System};
+use crate::system::{System};
 
 mod tmp;
 mod download;
@@ -18,7 +18,7 @@ mod system;
 
 fn main() {
     let cli = System::parse();
-    let exec = execute_operation(cli.operation);
+    let exec = cli.operation.execute();
 
     match exec {
         Ok(_) => println!("Execution successful"),
