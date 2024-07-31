@@ -58,7 +58,7 @@ impl_image!(ServerImage);
 
 pub mod rust {
     use reqwest::Url;
-
+    use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
     use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
@@ -102,7 +102,15 @@ pub mod rust {
 
     impl Install for RustImage {
         fn install(&self) -> Result<(), String> {
-            todo!()
+            let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf {} | sh -s -- -y", self.0.package().fetch.url());
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            Ok(())
         }
     }
 
