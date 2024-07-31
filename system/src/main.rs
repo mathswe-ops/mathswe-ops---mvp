@@ -71,8 +71,8 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
     };
 
     match operation {
-        Install { images: packages } => {
-            for id_raw in packages {
+        Install { images } => {
+            for id_raw in images {
                 let ops = load_image(id_raw)?.unwrap();
 
                 println!("Installing {}...", ops.image());
@@ -80,8 +80,8 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
             }
             Ok(())
         }
-        Uninstall { images: packages } => {
-            for id_raw in packages {
+        Uninstall { images } => {
+            for id_raw in images {
                 let ops = load_image(id_raw)?.unwrap();
 
                 println!("Uninstalling {}...", ops.image().id());
@@ -90,8 +90,8 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
 
             Ok(())
         }
-        Reinstall { images: packages } => {
-            for id_raw in packages {
+        Reinstall { images } => {
+            for id_raw in images {
                 let ops = load_image(id_raw)?.unwrap();
 
                 println!("Reinstalling {}...", ops.image());
