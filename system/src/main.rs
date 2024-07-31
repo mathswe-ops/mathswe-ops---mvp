@@ -5,7 +5,7 @@
 use std::io;
 
 use clap::{Parser, Subcommand};
-
+use Operation::{Install, Reinstall, Uninstall};
 use crate::image::ImageOps;
 use crate::image::repository::Repository;
 use crate::os::{Os, UBUNTU_X64};
@@ -71,7 +71,7 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
     };
 
     match operation {
-        Operation::Install { images: packages } => {
+        Install { images: packages } => {
             for id_raw in packages {
                 let ops = load_image(id_raw)?.unwrap();
 
@@ -80,7 +80,7 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
             }
             Ok(())
         }
-        Operation::Uninstall { images: packages } => {
+        Uninstall { images: packages } => {
             for id_raw in packages {
                 let ops = load_image(id_raw)?.unwrap();
 
@@ -90,7 +90,7 @@ fn execute_operation(operation: Operation) -> Result<(), String> {
 
             Ok(())
         }
-        Operation::Reinstall { images: packages } => {
+        Reinstall { images: packages } => {
             for id_raw in packages {
                 let ops = load_image(id_raw)?.unwrap();
 
