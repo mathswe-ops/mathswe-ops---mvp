@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use std::io;
 use std::path::PathBuf;
 use LinuxType::Ubuntu;
 use OsArch::X64;
@@ -82,5 +83,19 @@ impl OsPkg {
         println!("{}", stdout);
 
         Ok(())
+    }
+}
+
+pub fn detect_os() -> io::Result<Option<Os>> {
+    if cfg!(target_os = "linux") && cfg!(target_arch = "x86_64") {
+        let os_release = std::fs::read_to_string("/etc/os-release")?;
+
+        if os_release.contains("Ubuntu") {
+            Ok(Some(UBUNTU_X64))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
     }
 }

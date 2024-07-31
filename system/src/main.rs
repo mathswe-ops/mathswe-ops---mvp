@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::io;
-
 use clap::{Parser, Subcommand};
+
 use Operation::{Install, Reinstall, Uninstall};
+
 use crate::image::ImageOps;
 use crate::image::repository::Repository;
-use crate::os::{Os, UBUNTU_X64};
+use crate::os::detect_os;
 
 mod tmp;
 mod download;
@@ -40,20 +40,6 @@ enum Operation {
         #[arg(required = true)]
         images: Vec<String>,
     },
-}
-
-pub fn detect_os() -> io::Result<Option<Os>> {
-    if cfg!(target_os = "linux") && cfg!(target_arch = "x86_64") {
-        let os_release = std::fs::read_to_string("/etc/os-release")?;
-
-        if os_release.contains("Ubuntu") {
-            Ok(Some(UBUNTU_X64))
-        } else {
-            Ok(None)
-        }
-    } else {
-        Ok(None)
-    }
 }
 
 fn execute_operation(operation: Operation) -> Result<(), String> {
