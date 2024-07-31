@@ -116,7 +116,14 @@ pub mod rust {
 
     impl Uninstall for RustImage {
         fn uninstall(&self) -> Result<(), String> {
-            todo!()
+            let output = exec_cmd("rustup", &["self", "uninstall", "-y"])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            Ok(())
         }
     }
 
