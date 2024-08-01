@@ -15,6 +15,7 @@ mod image;
 mod package;
 mod os;
 mod system;
+mod exec;
 
 fn main() {
     let cli = System::parse();
