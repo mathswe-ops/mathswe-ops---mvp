@@ -6,15 +6,14 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Read};
 use std::path::Path;
-
 use sha2::{Digest, Sha256};
 
-#[derive(Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub(crate) enum HashAlgorithm {
     Sha256
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub(crate) struct Hash {
     algorithm: HashAlgorithm,
     hash: String,

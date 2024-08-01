@@ -4,7 +4,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::io::Error;
-use std::process::{Child, Command, Output};
+use std::process::{Child, Command, Output, Stdio};
 
 use CmdErrorCause::UnsuccessfulStatus;
 
@@ -15,7 +15,10 @@ use crate::cmd::IoErrorCause::{StartFail, WaitFail};
 pub enum IoErrorCause { StartFail, WaitFail }
 
 #[derive(Debug)]
-pub enum CmdErrorCause { Io(IoErrorCause, Error), UnsuccessfulStatus(Option<i32>) }
+pub enum CmdErrorCause {
+    Io(IoErrorCause, Error),
+    UnsuccessfulStatus(Option<i32>, String, String),
+}
 
 #[derive(Debug)]
 pub struct CmdError {
@@ -37,7 +40,13 @@ impl Display for CmdError {
         let reason = match &self.cause {
             Io(StartFail, err) => format!("Fail to start command {}. \nCause: {}", self.cmd, err),
             Io(WaitFail, err) => format!("Fail to wait for command {} exit. \nCause: {}", self.cmd, err),
-            UnsuccessfulStatus(code) => format!("Unsuccessful command {} execution. \nCause: Status code {:?}", self.cmd, code),
+            UnsuccessfulStatus(code, stdout, stderr) => format!(
+                "Unsuccessful command {} execution. \nCause: Status code {:?}.\n stdout: {}.\n stderr: {}",
+                self.cmd,
+                code,
+                stdout,
+                stderr,
+            ),
         };
 
         write!(f, "{}", reason)
@@ -53,7 +62,11 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
         if output.status.success() {
             Ok(output)
         } else {
-            Err(err(UnsuccessfulStatus(output.status.code())))
+            let code = output.status.code();
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+            Err(err(UnsuccessfulStatus(code, stdout, stderr)))
         }
     };
     let wait_child = |child: Child| {
@@ -65,6 +78,9 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
 
     Command::new(cmd)
         .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .map_err(io_err(StartFail))
         .and_then(wait_child)
@@ -95,7 +111,7 @@ mod tests {
             Ok(_) => panic!("Expected command to fail with unsuccessful status code, but it succeeded."),
             Err(e) => {
                 let status_code_matches = match e.cause {
-                    UnsuccessfulStatus(Some(actual)) => actual == code,
+                    UnsuccessfulStatus(Some(actual), ..) => actual == code,
                     _ => false
                 };
 
