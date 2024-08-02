@@ -93,6 +93,9 @@ pub mod rust {
                         Url::parse("https://www.rust-lang.org/tools/install").unwrap(),
                         DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
                     )))
+
+            // More Rustup doc:
+            // https://rust-lang.github.io/rustup/installation/other.html
         }
 
         pub fn from(os: Os) -> Option<Box<dyn ImageOps>> {
