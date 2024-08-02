@@ -148,7 +148,7 @@ pub mod go {
 
     use crate::cmd::exec_cmd;
     use crate::download::{Downloader, DownloadRequest, Integrity};
-    use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Go;
     use crate::image_ops_impl;
@@ -181,15 +181,6 @@ pub mod go {
                         Url::parse("https://go.dev/doc/install").unwrap(),
                         DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
                     )))
-        }
-
-        pub fn from(os: Os, info: GoInfo) -> Option<Box<dyn ImageOps>> {
-            Some(Box::new(Self::new(os, info)))
-        }
-
-        pub fn load_with(os: Os, info_loader: ImageInfoLoader) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
-            let info = info_loader.load(Go)?;
-            Ok(Self::from(os, info))
         }
     }
 

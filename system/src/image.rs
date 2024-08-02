@@ -10,8 +10,9 @@ use std::path::PathBuf;
 use serde::de::DeserializeOwned;
 
 use ImageInfoError::{IoError, SerdeError};
+
 use crate::os::Os;
-use crate::package::{Package};
+use crate::package::Package;
 
 pub(crate) mod repository;
 mod desktop;
@@ -106,17 +107,22 @@ impl Display for ImageInfoError {
 }
 
 pub struct ImageInfoLoader {
-    pub root: PathBuf,
-    pub dir: PathBuf,
+    id: ImageId,
+    root: PathBuf,
+    dir: PathBuf,
 }
 
 impl ImageInfoLoader {
-    pub fn path<T: ToImageId>(&self, id: T) -> PathBuf {
-        self.root.join(self.dir.clone()).join(format!("{}.json", id))
+    pub fn from<T: Clone + ToImageId>(id: &T, root: PathBuf, dir: PathBuf) -> Self {
+        ImageInfoLoader { id: id.clone().to_image_id(), root, dir }
     }
 
-    pub fn load<D: DeserializeOwned, T: ToImageId>(&self, id: T) -> Result<D, ImageInfoError> {
-        let info_path = self.path(id);
+    pub fn path(&self) -> PathBuf {
+        self.root.join(self.dir.clone()).join(format!("{}.json", self.id))
+    }
+
+    pub fn load<D: DeserializeOwned>(&self) -> Result<D, ImageInfoError> {
+        let info_path = self.path();
         let file = File::open(info_path.clone())
             .map_err(|error| IoError(
                 format!("Fail to read image info at {:?}.\nCause: {}", info_path, error.to_string())
@@ -126,6 +132,35 @@ impl ImageInfoLoader {
 
         serde_json::from_reader(reader)
             .map_err(|error| SerdeError(error.to_string()))
+    }
+}
+
+pub struct ImageLoadContext {
+    os: Os,
+    info_loader: ImageInfoLoader,
+}
+
+impl ImageLoadContext {
+    pub fn new(os: &Os, info_loader: ImageInfoLoader) -> Self {
+        ImageLoadContext { os: os.clone(), info_loader }
+    }
+
+    fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
+        os: Os,
+        info: D,
+        cons: fn(Os, D) -> T
+    ) -> Option<Box<dyn ImageOps>> {
+        Some(Box::new(cons(os, info)))
+    }
+
+    pub fn load<D: DeserializeOwned, T: ImageOps + 'static>(
+        &self,
+        cons: fn(Os, D) -> T,
+    ) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+        let info = self.info_loader.load()?;
+        let image = Self::image_from(self.os.clone(), info, cons);
+
+        Ok(image)
     }
 }
 

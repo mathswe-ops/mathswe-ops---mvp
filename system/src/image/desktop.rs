@@ -62,7 +62,7 @@ pub mod zoom {
     use crate::cmd::exec_cmd;
     use crate::download::{Downloader, DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
-    use crate::image::{Image, ImageInfoError, ImageInfoLoader, ImageOps, Install, Uninstall};
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::Zoom;
     use crate::image_ops_impl;
@@ -114,15 +114,6 @@ pub mod zoom {
                         Url::parse("https://zoom.us/download").unwrap(),
                         DownloadRequest::new(&fetch_url, Integrity::Gpg(gpg_key)).unwrap(),
                     )))
-        }
-
-        pub fn from(os: Os, info: ZoomInfo) -> Option<Box<dyn ImageOps>> {
-            Some(Box::new(Self::new(os, info)))
-        }
-
-        pub fn load_with(os: Os, info_loader: ImageInfoLoader) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
-            let info = info_loader.load(Zoom)?;
-            Ok(Self::from(os, info))
         }
     }
 
@@ -186,12 +177,13 @@ pub mod zoom {
 
         #[test]
         fn loads_zoom_image_info() {
-            let info = ImageInfoLoader {
-                root: PathBuf::from("resources/test/image"),
-                dir: PathBuf::from(""),
-            };
+            let info = ImageInfoLoader::from(
+                &Zoom,
+                PathBuf::from("resources/test/image"),
+                PathBuf::from(""),
+            );
             let zoom_info: ZoomInfo = info
-                .load(Zoom)
+                .load()
                 .expect("Fail to load Zoom test image");
 
             assert_eq!("6.1.1.443", zoom_info.version.to_string())
