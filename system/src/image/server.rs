@@ -78,16 +78,12 @@ pub mod rust {
     pub struct RustImage(ServerImage);
 
     impl RustImage {
-        pub fn fetch_url(os: Os) -> String {
-            match os {
-                Linux(_, _) => "https://sh.rustup.rs"
-            }.to_string()
-        }
-
         pub fn new(os: Os) -> Self {
             let id = Rust;
             let pkg_id = id.to_string();
-            let fetch_url = Self::fetch_url(os.clone());
+            let fetch_url = match os {
+                Linux(_, _) => "https://sh.rustup.rs"
+            };
             let version = "latest";
 
             RustImage(
@@ -98,15 +94,11 @@ pub mod rust {
                         os,
                         Software::new("Rust Team", "Rust", version),
                         Url::parse("https://www.rust-lang.org/tools/install").unwrap(),
-                        DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
+                        DownloadRequest::new(fetch_url, Integrity::None).unwrap(),
                     )))
 
             // More Rustup doc:
             // https://rust-lang.github.io/rustup/installation/other.html
-        }
-
-        pub fn from(os: Os) -> Option<Box<dyn ImageOps>> {
-            Some(Box::new(Self::new(os)))
         }
     }
 

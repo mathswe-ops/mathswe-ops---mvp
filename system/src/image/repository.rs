@@ -64,7 +64,7 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
         let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
         let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
-            Rust => RustImage::from(os),
+            Rust => ImageLoadContext::basic_image_from(os, RustImage::new),
             Go => ctx.load(GoImage::new)?,
             Sdkman => ImageLoadContext::basic_image_from(os, SdkmanImage::new),
         };
