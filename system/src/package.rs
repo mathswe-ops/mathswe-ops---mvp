@@ -9,7 +9,7 @@ use std::str::FromStr;
 use de::Visitor;
 use reqwest::Url;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-
+use VersionError::DigitIntError;
 use crate::download::DownloadRequest;
 use crate::os::{Os, OsPkg, PkgType};
 use crate::package::VersionError::InvalidDigit;
@@ -17,12 +17,17 @@ use crate::package::VersionError::InvalidDigit;
 #[derive(Debug)]
 pub enum VersionError {
     InvalidDigit(String),
-    ParseIntError(ParseIntError),
+    DigitIntError(ParseIntError),
 }
 
 impl Display for VersionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        let msg = match self {
+            InvalidDigit(msg) => format!("String has invalid version digits: {msg}"),
+            DigitIntError(error) => format!("String contains invalid int digit(s): {error}")
+        };
+
+        write!(f, "{}", msg)
     }
 }
 
@@ -39,7 +44,7 @@ impl FromStr for SemVer {
     type Err = VersionError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parse_to_version_error = |parse_error: ParseIntError| VersionError::ParseIntError(parse_error);
+        let parse_to_version_error = |parse_error: ParseIntError| DigitIntError(parse_error);
 
         let parts: Vec<&str> = s.split('.').collect();
 
@@ -94,7 +99,7 @@ impl FromStr for SemVerRev {
     type Err = VersionError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parse_to_version_error = |parse_error: ParseIntError| VersionError::ParseIntError(parse_error);
+        let parse_to_version_error = |parse_error: ParseIntError| DigitIntError(parse_error);
 
         let parts: Vec<&str> = s.split('.').collect();
 
@@ -165,7 +170,7 @@ impl Package {
     }
 
     pub fn to_os_pkg(&self, pkg_type: PkgType) -> OsPkg {
-        OsPkg{ pkg_type, name: self.name.clone() }
+        OsPkg { pkg_type, name: self.name.clone() }
     }
 }
 
@@ -178,8 +183,11 @@ impl Display for Package {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-
-    use crate::package::{SemVer, SemVerRev};
+    use reqwest::Url;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::download::gpg::GpgKey;
+    use crate::os::UBUNTU_X64;
+    use crate::package::{Package, SemVer, SemVerRev, Software};
 
     #[test]
     fn semver_to_string() {
@@ -243,5 +251,35 @@ mod tests {
             .expect("Fail to serialize SemVerRev to String");
 
         assert_eq!(format!("\"{}\"", ver.to_string()), ser);
+    }
+
+    #[test]
+    fn creates_software_model() {
+        let version = SemVerRev(6, 1, 1, 443);
+        let zoom = Software::new("Zoom Video Communications, Inc", "Zoom", &version.to_string());
+
+        assert_eq!("Zoom Video Communications, Inc", zoom.provider);
+        assert_eq!("Zoom", zoom.name);
+        assert_eq!("6.1.1.443", zoom.version);
+    }
+
+    #[test]
+    fn creates_package() {
+        let version = SemVerRev(6, 1, 1, 443);
+        let zoom = Software::new("Zoom Video Communications, Inc", "Zoom", &version.to_string());
+        let os = UBUNTU_X64;
+        let fetch_url = "https://zoom.us/client/6.1.1.443/zoom_amd64.deb";
+        let gpg_key_url = Url::parse("https://zoom.us/linux/download/pubkey?version=5-12-6").unwrap();
+        let gpg_key = GpgKey::new(gpg_key_url, "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481".to_string());
+        let package = Package::new(
+            "zoom",
+            os,
+            zoom,
+            Url::parse("https://zoom.us/download").unwrap(),
+            DownloadRequest::new(&fetch_url, Integrity::Gpg(gpg_key)).unwrap(),
+        );
+
+        assert_eq!("zoom", package.name);
+        assert_eq!(UBUNTU_X64, package.os);
     }
 }

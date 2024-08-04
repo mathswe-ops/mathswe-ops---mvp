@@ -102,7 +102,7 @@ mod tests {
     use crate::download::gpg::GpgKey;
 
     #[test]
-    pub fn installs_zoom_gpg_key() {
+    fn installs_zoom_gpg_key() {
         let url = "https://zoom.us/linux/download/pubkey?version=5-12-6";
         let fingerprint = "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481";
         let key = GpgKey::new(Url::parse(url).unwrap(), fingerprint.to_string());
@@ -111,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    pub fn rejects_invalid_fingerprint() {
+    fn rejects_invalid_fingerprint() {
         let url = "https://zoom.us/linux/download/pubkey?version=5-12-6";
 
         // Has a 0 instead of the original 5 at the fist character

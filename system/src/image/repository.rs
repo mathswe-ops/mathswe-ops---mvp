@@ -4,11 +4,14 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use ServerImageId::Rust;
-use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
+
+use ServerImageId::{Go, Rust};
+
+use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
 use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::zoom::ZoomImage;
+use crate::image::server::go::GoImage;
 use crate::image::server::rust::RustImage;
 use crate::image::server::ServerImageId;
 use crate::os::Os;
@@ -31,9 +34,10 @@ impl ToImageId for RepositoryImageLoader<DesktopImageId> {
 
 impl LoadImage for RepositoryImageLoader<DesktopImageId> {
     fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
-        let info = ImageInfoLoader { root: PathBuf::from("image"), dir: PathBuf::from("") };
+        let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
+        let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
-            Zoom => ZoomImage::load_with(os, info)?,
+            Zoom => ctx.load(ZoomImage::new)?,
         };
 
         Ok(image)
@@ -56,8 +60,11 @@ impl ToImageId for RepositoryImageLoader<ServerImageId> {
 
 impl LoadImage for RepositoryImageLoader<ServerImageId> {
     fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+        let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
+        let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
-            Rust => RustImage::from(os)
+            Rust => RustImage::from(os),
+            Go => ctx.load(GoImage::new)?,
         };
 
         Ok(image)
