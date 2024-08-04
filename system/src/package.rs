@@ -218,7 +218,12 @@ pub struct Package {
 }
 
 impl Package {
-    pub fn new(name: &str, os: Os, software: Software, doc: Url, fetch: DownloadRequest) -> Package {
+    pub fn new(name: &str,
+        os: Os,
+        software: Software,
+        doc: Url,
+        fetch: DownloadRequest,
+    ) -> Self {
         Package { name: name.to_string(), os, software, doc, fetch }
     }
 
