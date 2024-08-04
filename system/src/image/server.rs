@@ -321,6 +321,8 @@ pub mod sdkman {
 
     impl Install for SdkmanImage {
         fn install(&self) -> Result<(), String> {
+            println!("Fetching SDKMAN!");
+
             let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf {} | bash", self.0.package().fetch.url());
             let output = exec_cmd("bash", &["-c", &bash_cmd])
                 .map_err(|output| output.to_string())?;
@@ -328,6 +330,13 @@ pub mod sdkman {
             let stdout = String::from_utf8_lossy(&output.stdout);
 
             println!("{}", stdout);
+
+            // sdk is not a program but a bash function declared in
+            // sdkman-init.sh, so that script must be sourced first before
+            // calling the command.
+            // .bashrc should work as well to load the sdk function into the
+            // bash session.
+            println!("Initializing SDKMAN!");
 
             let bash_cmd = "source ~/.sdkman/bin/sdkman-init.sh && sdk version";
             let output = exec_cmd("bash", &["-c", &bash_cmd])
