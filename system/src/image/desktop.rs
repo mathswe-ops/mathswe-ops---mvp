@@ -84,23 +84,16 @@ pub mod zoom {
     pub struct ZoomImage(DesktopImage);
 
     impl ZoomImage {
-        pub fn filename(os: Os) -> String {
-            match os {
-                Linux(X64, Ubuntu) => "zoom_amd64.deb"
-            }.to_string()
-        }
-
         pub fn new(
             os: Os,
             ZoomInfo { version, public_key_version, key_fingerprint }: ZoomInfo,
         ) -> ZoomImage {
             let id = Zoom;
             let pkg_id = id.to_string();
-            let fetch_url = format!(
-                "https://zoom.us/client/{}/{}",
-                version,
-                Self::filename(os.clone())
-            );
+            let filename = match os {
+                Linux(X64, Ubuntu) => "zoom_amd64.deb"
+            };
+            let fetch_url = format!("https://zoom.us/client/{}/{}", version, filename);
             let gpg_key_url = Url::parse(format!("https://zoom.us/linux/download/pubkey?version={}", public_key_version).as_str()).unwrap();
             let gpg_key = GpgKey::new(gpg_key_url, key_fingerprint);
 
