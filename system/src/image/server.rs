@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Rust};
+use ServerImageId::{Go, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -16,6 +16,7 @@ use crate::package::Package;
 pub enum ServerImageId {
     Rust,
     Go,
+    Sdkman,
 }
 
 impl Display for ServerImageId {
@@ -23,6 +24,7 @@ impl Display for ServerImageId {
         let msg = match self {
             Rust => "rust",
             Go => "go",
+            Sdkman => "sdkman",
         };
 
         write!(f, "{}", msg)
@@ -34,6 +36,7 @@ impl StrFind for ServerImageId {
         match s {
             "rust" => Some(Rust),
             "go" => Some(Go),
+            "sdkman" => Some(Sdkman),
             _ => None
         }
     }
@@ -285,4 +288,109 @@ pub mod go {
 
         Ok(())
     }
+}
+
+pub mod sdkman {
+    use std::{env, fs};
+    use std::path::Path;
+    use reqwest::Url;
+    use crate::cmd::exec_cmd;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Sdkman;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, Software};
+
+    pub struct SdkmanImage(ServerImage);
+
+    impl SdkmanImage {
+        pub fn new(os: Os) -> Self {
+            let id = Sdkman;
+            let pkg_id = id.to_string();
+            let version = "latest";
+            let fetch_url = "https://get.sdkman.io";
+
+            SdkmanImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        &pkg_id.as_str(),
+                        os,
+                        Software::new("SDKMAN!", "SDKMAN!", version),
+                        Url::parse("https://sdkman.io/install").unwrap(),
+                        DownloadRequest::new(fetch_url, Integrity::None).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for SdkmanImage {
+        fn install(&self) -> Result<(), String> {
+            let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf {} | bash", self.0.package().fetch.url());
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            let bash_cmd = "source ~/.sdkman/bin/sdkman-init.sh && sdk version";
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            if !output.stderr.is_empty() {
+                println!("Source .bashrc (error): {}", String::from_utf8_lossy(&output.stderr));
+            }
+
+            println!("SDKMAN! installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for SdkmanImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let sdkman_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join(".sdkman"))
+                .map_err(|output| output.to_string())?;
+
+            println!("Removing SDKMAN! files...");
+
+            fs::remove_dir_all(sdkman_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Removing environment variables...");
+
+            // It deletes the lines from ~/.bashrc
+            // #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+            // export SDKMAN_DIR="$HOME/.sdkman"
+            // [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+            //
+
+            let prof = env::var("HOME")
+                .map(|home| Path::new(&home).join(".bashrc"))
+                .map_err(|output| output.to_string())?;
+
+            let clean_profile_pattern = r#"/#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!/d; /export SDKMAN_DIR="\$HOME\/.sdkman"/d; /\[\[ -s "\$HOME\/.sdkman\/bin\/sdkman-init.sh" \]\] && source "\$HOME\/.sdkman\/bin\/sdkman-init.sh"/d"#;
+            let output = exec_cmd("sed", &["-i", clean_profile_pattern, prof.to_str().unwrap()])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("SDKMAN! uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for SdkmanImage { image_ops_impl!(); }
 }

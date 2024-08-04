@@ -5,7 +5,7 @@
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use ServerImageId::{Go, Rust};
+use ServerImageId::{Go, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
@@ -13,6 +13,7 @@ use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::go::GoImage;
 use crate::image::server::rust::RustImage;
+use crate::image::server::sdkman::SdkmanImage;
 use crate::image::server::ServerImageId;
 use crate::os::Os;
 
@@ -65,6 +66,7 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
         let image = match self.id {
             Rust => RustImage::from(os),
             Go => ctx.load(GoImage::new)?,
+            Sdkman => ImageLoadContext::basic_image_from(os, SdkmanImage::new),
         };
 
         Ok(image)
