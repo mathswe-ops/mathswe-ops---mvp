@@ -145,6 +145,13 @@ impl ImageLoadContext {
         ImageLoadContext { os: os.clone(), info_loader }
     }
 
+    pub fn basic_image_from<T: ImageOps + 'static>(
+        os: Os,
+        cons: fn(Os) -> T
+    ) -> Option<Box<dyn ImageOps>> {
+        Some(Box::new(cons(os)))
+    }
+
     fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
         os: Os,
         info: D,
