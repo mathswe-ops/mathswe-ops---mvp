@@ -9,7 +9,7 @@ use std::str::FromStr;
 use de::Visitor;
 use reqwest::Url;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-
+use VersionError::DigitIntError;
 use crate::download::DownloadRequest;
 use crate::os::{Os, OsPkg, PkgType};
 use crate::package::VersionError::InvalidDigit;
@@ -17,12 +17,17 @@ use crate::package::VersionError::InvalidDigit;
 #[derive(Debug)]
 pub enum VersionError {
     InvalidDigit(String),
-    ParseIntError(ParseIntError),
+    DigitIntError(ParseIntError),
 }
 
 impl Display for VersionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        let msg = match self {
+            InvalidDigit(msg) => format!("String has invalid version digits: {msg}"),
+            DigitIntError(error) => format!("String contains invalid int digit(s): {error}")
+        };
+
+        write!(f, "{}", msg)
     }
 }
 
@@ -39,7 +44,7 @@ impl FromStr for SemVer {
     type Err = VersionError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parse_to_version_error = |parse_error: ParseIntError| VersionError::ParseIntError(parse_error);
+        let parse_to_version_error = |parse_error: ParseIntError| DigitIntError(parse_error);
 
         let parts: Vec<&str> = s.split('.').collect();
 
@@ -94,7 +99,7 @@ impl FromStr for SemVerRev {
     type Err = VersionError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parse_to_version_error = |parse_error: ParseIntError| VersionError::ParseIntError(parse_error);
+        let parse_to_version_error = |parse_error: ParseIntError| DigitIntError(parse_error);
 
         let parts: Vec<&str> = s.split('.').collect();
 
@@ -165,7 +170,7 @@ impl Package {
     }
 
     pub fn to_os_pkg(&self, pkg_type: PkgType) -> OsPkg {
-        OsPkg{ pkg_type, name: self.name.clone() }
+        OsPkg { pkg_type, name: self.name.clone() }
     }
 }
 
