@@ -10,17 +10,17 @@ use PkgType::Deb;
 use crate::cmd::exec_cmd;
 use crate::os::Os::Linux;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum OsArch {
     X64
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum LinuxType {
     Ubuntu
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Os {
     Linux(OsArch, LinuxType)
 }

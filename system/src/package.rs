@@ -183,8 +183,11 @@ impl Display for Package {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-
-    use crate::package::{SemVer, SemVerRev, Software};
+    use reqwest::Url;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::download::gpg::GpgKey;
+    use crate::os::UBUNTU_X64;
+    use crate::package::{Package, SemVer, SemVerRev, Software};
 
     #[test]
     fn semver_to_string() {
@@ -258,5 +261,25 @@ mod tests {
         assert_eq!("Zoom Video Communications, Inc", zoom.provider);
         assert_eq!("Zoom", zoom.name);
         assert_eq!("6.1.1.443", zoom.version);
+    }
+
+    #[test]
+    fn creates_package() {
+        let version = SemVerRev(6, 1, 1, 443);
+        let zoom = Software::new("Zoom Video Communications, Inc", "Zoom", &version.to_string());
+        let os = UBUNTU_X64;
+        let fetch_url = "https://zoom.us/client/6.1.1.443/zoom_amd64.deb";
+        let gpg_key_url = Url::parse("https://zoom.us/linux/download/pubkey?version=5-12-6").unwrap();
+        let gpg_key = GpgKey::new(gpg_key_url, "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481".to_string());
+        let package = Package::new(
+            "zoom",
+            os,
+            zoom,
+            Url::parse("https://zoom.us/download").unwrap(),
+            DownloadRequest::new(&fetch_url, Integrity::Gpg(gpg_key)).unwrap(),
+        );
+
+        assert_eq!("zoom", package.name);
+        assert_eq!(UBUNTU_X64, package.os);
     }
 }
