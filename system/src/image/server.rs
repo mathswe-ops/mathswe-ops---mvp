@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Rust, Sdkman};
+use ServerImageId::{Go, Java, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -17,6 +17,7 @@ pub enum ServerImageId {
     Rust,
     Go,
     Sdkman,
+    Java,
 }
 
 impl Display for ServerImageId {
@@ -25,6 +26,7 @@ impl Display for ServerImageId {
             Rust => "rust",
             Go => "go",
             Sdkman => "sdkman",
+            Java => "java",
         };
 
         write!(f, "{}", msg)
@@ -37,6 +39,7 @@ impl StrFind for ServerImageId {
             "rust" => Some(Rust),
             "go" => Some(Go),
             "sdkman" => Some(Sdkman),
+            "java" => Some(Java),
             _ => None
         }
     }
@@ -285,7 +288,9 @@ pub mod go {
 pub mod sdkman {
     use std::{env, fs};
     use std::path::Path;
+
     use reqwest::Url;
+
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
     use crate::image::{Image, ImageOps, Install, Uninstall};
@@ -394,4 +399,82 @@ pub mod sdkman {
     }
 
     impl ImageOps for SdkmanImage { image_ops_impl!(); }
+}
+
+pub mod java {
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image::Image;
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Java;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVerVendor, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct JavaInfo {
+        version: SemVerVendor,
+    }
+
+    pub struct JavaImage(ServerImage);
+
+    impl JavaImage {
+        pub fn new(os: Os, JavaInfo { version }: JavaInfo) -> Self {
+            let id = Java;
+            let pkg_name = id.to_string();
+
+            JavaImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("", "JDK (Java Development Kit)", &version.to_string()),
+                    Url::parse("https://sdkman.io/jdks").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for JavaImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Java via SDKMAN!");
+
+            let sdk_cmd = format!("sdk install java {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.sdkman/bin/sdkman-init.sh && {}", sdk_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Java installed");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for JavaImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Java via SDKMAN!");
+
+            let sdk_cmd = format!("sdk uninstall java {} --force", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.sdkman/bin/sdkman-init.sh && {}", sdk_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Java uninstalled");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for JavaImage { image_ops_impl!(); }
 }
