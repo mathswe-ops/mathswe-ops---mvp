@@ -87,7 +87,7 @@ pub mod zoom {
         pub fn new(
             os: Os,
             ZoomInfo { version, public_key_version, key_fingerprint }: ZoomInfo,
-        ) -> ZoomImage {
+        ) -> Self {
             let id = Zoom;
             let pkg_id = id.to_string();
             let filename = match os {

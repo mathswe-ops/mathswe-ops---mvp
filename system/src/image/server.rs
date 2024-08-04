@@ -81,7 +81,7 @@ pub mod rust {
             }.to_string()
         }
 
-        pub fn new(os: Os) -> RustImage {
+        pub fn new(os: Os) -> Self {
             let id = Rust;
             let pkg_id = id.to_string();
             let fetch_url = Self::fetch_url(os.clone());
@@ -165,7 +165,7 @@ pub mod go {
     pub struct GoImage(ServerImage);
 
     impl GoImage {
-        pub fn new(os: Os, GoInfo { version }: GoInfo) -> GoImage {
+        pub fn new(os: Os, GoInfo { version }: GoInfo) -> Self {
             let id = Go;
             let fetch_url = match os {
                 Linux(_, _) => format!("https://go.dev/dl/go{}.linux-amd64.tar.gz", version),
