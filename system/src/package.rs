@@ -142,6 +142,59 @@ impl<'de> Deserialize<'de> for SemVerRev {
     }
 }
 
+#[derive(PartialEq, Debug)]
+pub struct SemVerVendor(pub u8, pub u8, pub u8, pub String);
+
+impl Display for SemVerVendor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}-{}", self.0, self.1, self.2, self.3)
+    }
+}
+
+impl FromStr for SemVerVendor {
+    type Err = VersionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.splitn(2, '-').collect();
+
+        if parts.len() != 2 {
+            return Err(InvalidDigit(format!("String {} must contain a vendor part after the version", s)));
+        }
+
+        let version_part = parts[0];
+        let vendor_part = parts[1].to_string();
+        let SemVer(major, minor, patch) = SemVer::from_str(version_part)?;
+
+        Ok(SemVerVendor(major, minor, patch, vendor_part))
+    }
+}
+
+impl Serialize for SemVerVendor {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+struct SemVerVendorVisitor;
+
+impl<'de> Visitor<'de> for SemVerVendorVisitor {
+    type Value = SemVerVendor;
+
+    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+        formatter.write_str("a version string in the format x.y.z-vendor")
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        SemVerVendor::from_str(v).map_err(E::custom)
+    }
+}
+
+impl<'de> Deserialize<'de> for SemVerVendor {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_str(SemVerVendorVisitor)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Software {
     pub provider: String,
@@ -187,7 +240,7 @@ mod tests {
     use crate::download::{DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
     use crate::os::UBUNTU_X64;
-    use crate::package::{Package, SemVer, SemVerRev, Software};
+    use crate::package::{Package, SemVer, SemVerRev, SemVerVendor, Software};
 
     #[test]
     fn semver_to_string() {
@@ -201,6 +254,13 @@ mod tests {
         let ver = SemVerRev(2, 10, 6, 465);
 
         assert_eq!("2.10.6.465", ver.to_string())
+    }
+
+    #[test]
+    fn semver_vendor_to_string() {
+        let ver = SemVerVendor(21, 0, 1, "amzn".to_string());
+
+        assert_eq!("21.0.1-amzn", ver.to_string())
     }
 
     #[test]
@@ -225,6 +285,14 @@ mod tests {
         let sem_ver_rev = SemVerRev::from_str(sem_ver_rev_str).unwrap();
 
         assert_eq!(sem_ver_rev, SemVerRev(1, 2, 3, 4));
+    }
+
+    #[test]
+    fn semver_vendor_from_str() {
+        let sem_ver_vendor_str = "1.2.3-vendor";
+        let sem_ver_vendor = SemVerVendor::from_str(sem_ver_vendor_str).unwrap();
+
+        assert_eq!(sem_ver_vendor, SemVerVendor(1, 2, 3, "vendor".to_string()));
     }
 
     #[test]
