@@ -184,7 +184,7 @@ impl Display for Package {
 mod tests {
     use std::str::FromStr;
 
-    use crate::package::{SemVer, SemVerRev};
+    use crate::package::{SemVer, SemVerRev, Software};
 
     #[test]
     fn semver_to_string() {
@@ -248,5 +248,15 @@ mod tests {
             .expect("Fail to serialize SemVerRev to String");
 
         assert_eq!(format!("\"{}\"", ver.to_string()), ser);
+    }
+
+    #[test]
+    fn creates_software_model() {
+        let version = SemVerRev(6, 1, 1, 443);
+        let zoom = Software::new("Zoom Video Communications, Inc", "Zoom", &version.to_string());
+
+        assert_eq!("Zoom Video Communications, Inc", zoom.provider);
+        assert_eq!("Zoom", zoom.name);
+        assert_eq!("6.1.1.443", zoom.version);
     }
 }
