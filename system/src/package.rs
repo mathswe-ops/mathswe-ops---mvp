@@ -10,7 +10,7 @@ use de::Visitor;
 use reqwest::Url;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use VersionError::DigitIntError;
-use crate::download::DownloadRequest;
+use crate::download::{DownloadRequest, Integrity};
 use crate::os::{Os, OsPkg, PkgType};
 use crate::package::VersionError::InvalidDigit;
 
@@ -225,6 +225,21 @@ impl Package {
         fetch: DownloadRequest,
     ) -> Self {
         Package { name: name.to_string(), os, software, doc, fetch }
+    }
+
+    /// Creates a managed `Package` that doesn't have a download URL because a
+    /// particular tool installs it on their own, e.g., `apt` packages where you
+    /// just run `apt-get install { name }` and `apt` downloads it under the
+    /// hood.
+    pub fn new_managed(
+        name: &str,
+        os: Os,
+        software: Software,
+        doc: Url,
+    ) -> Self {
+        let download_req = DownloadRequest::new(doc.as_str(), Integrity::None).unwrap();
+
+        Self::new(name, os, software, doc, download_req)
     }
 
     pub fn to_os_pkg(&self, pkg_type: PkgType) -> OsPkg {
