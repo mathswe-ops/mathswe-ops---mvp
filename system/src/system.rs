@@ -121,14 +121,13 @@ impl Operation {
 
     fn load_image_ops(id_raw: &str, os: &Os) -> Result<Box<dyn ImageOps>, String> {
         Self::load_image(id_raw, os.clone())
-            .map(|image_op| image_op.unwrap())
             .map_err(|error| {
                 println!("{}", format!("❌ Fail to load image {}.\nCause: {}", id_raw, error));
                 id_raw.to_string()
             })
     }
 
-    fn load_image(id_raw: &str, os: Os) -> Result<Option<Box<dyn ImageOps>>, String> {
+    fn load_image(id_raw: &str, os: Os) -> Result<Box<dyn ImageOps>, String> {
         Repository::image_loader_from(id_raw)
             .and_then(|loader| loader
                 .load_image(os.clone())

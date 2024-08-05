@@ -145,18 +145,25 @@ impl ImageLoadContext {
         ImageLoadContext { os: os.clone(), info_loader }
     }
 
+    pub fn basic_image_from<T: ImageOps + 'static>(
+        os: Os,
+        cons: fn(Os) -> T
+    ) -> Box<dyn ImageOps> {
+        Box::new(cons(os))
+    }
+
     fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
         os: Os,
         info: D,
         cons: fn(Os, D) -> T
-    ) -> Option<Box<dyn ImageOps>> {
-        Some(Box::new(cons(os, info)))
+    ) -> Box<dyn ImageOps> {
+        Box::new(cons(os, info))
     }
 
     pub fn load<D: DeserializeOwned, T: ImageOps + 'static>(
         &self,
         cons: fn(Os, D) -> T,
-    ) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+    ) -> Result<Box<dyn ImageOps>, ImageInfoError> {
         let info = self.info_loader.load()?;
         let image = Self::image_from(self.os.clone(), info, cons);
 
@@ -165,7 +172,7 @@ impl ImageLoadContext {
 }
 
 pub trait LoadImage where Self: Display {
-    fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError>;
+    fn load_image(&self, os: Os) -> Result<Box<dyn ImageOps>, ImageInfoError>;
 }
 
 pub trait ImageLoader: Display + ToImageId + LoadImage {}
