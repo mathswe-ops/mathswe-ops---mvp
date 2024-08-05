@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Java, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -18,6 +18,7 @@ pub enum ServerImageId {
     Go,
     Sdkman,
     Java,
+    Gradle,
 }
 
 impl Display for ServerImageId {
@@ -27,6 +28,7 @@ impl Display for ServerImageId {
             Go => "go",
             Sdkman => "sdkman",
             Java => "java",
+            Gradle => "gradle",
         };
 
         write!(f, "{}", msg)
@@ -40,6 +42,7 @@ impl StrFind for ServerImageId {
             "go" => Some(Go),
             "sdkman" => Some(Sdkman),
             "java" => Some(Java),
+            "gradle" => Some(Gradle),
             _ => None
         }
     }
@@ -477,4 +480,97 @@ pub mod java {
     }
 
     impl ImageOps for JavaImage { image_ops_impl!(); }
+}
+
+pub mod gradle {
+    use std::str::FromStr;
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+    use crate::cmd::exec_cmd;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image::Image;
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Gradle;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct GradleInfo {
+        version: SemVer,
+    }
+
+    pub struct GradleImage(ServerImage, SemVer);
+
+    impl GradleImage {
+        pub fn new(os: Os, GradleInfo { version }: GradleInfo) -> Self {
+            let id = Gradle;
+            let pkg_name = id.to_string();
+
+            GradleImage(
+                ServerImage(
+                    id,
+                    Package::new_managed(
+                        &pkg_name,
+                        os,
+                        Software::new("Gradle, Inc", "Gradle", &version.to_string()),
+                        Url::parse("https://sdkman.io/sdks").unwrap(),
+                    ),
+                ),
+                version,
+            )
+        }
+
+        fn get_normalized_version(&self) -> String {
+            let SemVer(major, minor, patch) = self.1;
+
+            if patch == 0 {
+                format!("{major}.{minor}")
+            } else {
+                self.1.to_string()
+            }
+        }
+    }
+
+    impl Install for GradleImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Gradle via SDKMAN!");
+
+            let version = self.get_normalized_version();
+            let sdk_cmd = format!("sdk install gradle {version}");
+            let bash_cmd = format!("source ~/.sdkman/bin/sdkman-init.sh && {}", sdk_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Gradle installed");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for GradleImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Gradle via SDKMAN!");
+
+            let version = self.get_normalized_version();
+            let sdk_cmd = format!("sdk uninstall gradle {version} --force");
+            let bash_cmd = format!("source ~/.sdkman/bin/sdkman-init.sh && {}", sdk_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Gradle uninstalled");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for GradleImage { image_ops_impl!(); }
 }
