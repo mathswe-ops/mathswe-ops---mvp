@@ -483,9 +483,9 @@ pub mod java {
 }
 
 pub mod gradle {
-    use std::str::FromStr;
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
+
     use crate::cmd::exec_cmd;
     use crate::image::{ImageOps, Install, Uninstall};
     use crate::image::Image;

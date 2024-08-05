@@ -36,7 +36,7 @@ impl ToImageId for RepositoryImageLoader<DesktopImageId> {
 }
 
 impl LoadImage for RepositoryImageLoader<DesktopImageId> {
-    fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+    fn load_image(&self, os: Os) -> Result<Box<dyn ImageOps>, ImageInfoError> {
         let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
         let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
@@ -62,7 +62,7 @@ impl ToImageId for RepositoryImageLoader<ServerImageId> {
 }
 
 impl LoadImage for RepositoryImageLoader<ServerImageId> {
-    fn load_image(&self, os: Os) -> Result<Option<Box<dyn ImageOps>>, ImageInfoError> {
+    fn load_image(&self, os: Os) -> Result<Box<dyn ImageOps>, ImageInfoError> {
         let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
         let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
