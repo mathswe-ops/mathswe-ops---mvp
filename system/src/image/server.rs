@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -19,6 +19,7 @@ pub enum ServerImageId {
     Sdkman,
     Java,
     Gradle,
+    Nvm,
 }
 
 impl Display for ServerImageId {
@@ -29,6 +30,7 @@ impl Display for ServerImageId {
             Sdkman => "sdkman",
             Java => "java",
             Gradle => "gradle",
+            Nvm => "nvm",
         };
 
         write!(f, "{}", msg)
@@ -43,6 +45,7 @@ impl StrFind for ServerImageId {
             "sdkman" => Some(Sdkman),
             "java" => Some(Java),
             "gradle" => Some(Gradle),
+            "nvm" => Some(Nvm),
             _ => None
         }
     }
@@ -573,4 +576,121 @@ pub mod gradle {
     }
 
     impl ImageOps for GradleImage { image_ops_impl!(); }
+}
+
+pub mod nvm {
+    use std::{env, fs};
+    use std::path::Path;
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Nvm;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NvmInfo {
+        version: SemVer,
+    }
+
+    pub struct NvmImage(ServerImage);
+
+    impl NvmImage {
+        pub fn new(os: Os, NvmInfo { version }: NvmInfo) -> Self {
+            let id = Nvm;
+            let pkg_id = id.to_string();
+            let fetch_url = format!("https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", version);
+
+            NvmImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        &pkg_id.as_str(),
+                        os,
+                        Software::new("nvm.sh", "NVM (Node Version Manager)", &version.to_string()),
+                        Url::parse("https://github.com/nvm-sh/nvm").unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for NvmImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Fetching and installing NVM.");
+
+            let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf -o- {} | bash", self.0.package().fetch.url());
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NvmImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let nvm_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join(".nvm"))
+                .map_err(|output| output.to_string())?;
+
+            println!("Unloading NVM...");
+
+            let nvm_cmd = "source ~/.nvm/nvm.sh && nvm unload";
+
+            let output = exec_cmd("bash", &["-c", nvm_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Deleting NVM files...");
+
+            fs::remove_dir_all(nvm_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Removing environment variables...");
+
+            // It deletes the lines from ~/.bashrc
+            // export NVM_DIR="$HOME/.nvm"
+            // [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+            // [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+            let prof = env::var("HOME")
+                .map(|home| Path::new(&home).join(".bashrc"))
+                .map_err(|output| output.to_string())?;
+
+            let clean_profile_pattern = r#"
+                /export NVM_DIR="\$HOME\/.nvm"/d;
+                /\[ -s "\$NVM_DIR\/nvm.sh" \] && \\. "\$NVM_DIR\/nvm.sh"/d;
+                /\[ -s "\$NVM_DIR\/bash_completion" \] && \\. "\$NVM_DIR\/bash_completion"/d
+            "#.trim();
+
+            let output = exec_cmd("sed", &["-i", clean_profile_pattern, prof.to_str().unwrap()])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NvmImage { image_ops_impl!(); }
 }
