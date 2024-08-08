@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Nvm, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -20,6 +20,7 @@ pub enum ServerImageId {
     Java,
     Gradle,
     Nvm,
+    Node,
 }
 
 impl Display for ServerImageId {
@@ -31,6 +32,7 @@ impl Display for ServerImageId {
             Java => "java",
             Gradle => "gradle",
             Nvm => "nvm",
+            Node => "node",
         };
 
         write!(f, "{}", msg)
@@ -46,6 +48,7 @@ impl StrFind for ServerImageId {
             "java" => Some(Java),
             "gradle" => Some(Gradle),
             "nvm" => Some(Nvm),
+            "node" => Some(Node),
             _ => None
         }
     }
@@ -693,4 +696,84 @@ pub mod nvm {
     }
 
     impl ImageOps for NvmImage { image_ops_impl!(); }
+}
+
+pub mod node {
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image::Image;
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Node;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NodeInfo {
+        version: SemVer, // TODO supports latest version too
+    }
+
+    pub struct NodeImage(ServerImage);
+
+    impl NodeImage {
+        pub fn new(os: Os, NodeInfo { version }: NodeInfo) -> Self {
+            let id = Node;
+            let pkg_name = id.to_string();
+
+            NodeImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("OpenJS Foundation", "Node.js", &version.to_string()),
+                    Url::parse("https://nodejs.org/en").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for NodeImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Node via NVM.");
+
+            let nvm_cmd = format!("nvm install {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node installed");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NodeImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Node via NVM.");
+
+            let nvm_cmd = format!("nvm uninstall {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node uninstalled");
+
+            // TODO Consider fail: Cannot uninstall currently-active node version
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NodeImage { image_ops_impl!(); }
 }

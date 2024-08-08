@@ -5,7 +5,7 @@
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use ServerImageId::{Go, Gradle, Java, Nvm, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
@@ -14,6 +14,7 @@ use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::go::GoImage;
 use crate::image::server::gradle::GradleImage;
 use crate::image::server::java::JavaImage;
+use crate::image::server::node::NodeImage;
 use crate::image::server::nvm::NvmImage;
 use crate::image::server::rust::RustImage;
 use crate::image::server::sdkman::SdkmanImage;
@@ -73,6 +74,7 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
             Java => ctx.load(JavaImage::new)?,
             Gradle => ctx.load(GradleImage::new)?,
             Nvm => ctx.load(NvmImage::new)?,
+            Node => ctx.load(NodeImage::new)?,
         };
 
         Ok(image)
