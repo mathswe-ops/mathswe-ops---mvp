@@ -31,7 +31,7 @@ impl Display for VersionError {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct SemVer(pub u8, pub u8, pub u8);
 
 impl Display for SemVer {
@@ -86,7 +86,7 @@ impl<'de> Deserialize<'de> for SemVer {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct SemVerRev(pub u8, pub u8, pub u8, pub u16);
 
 impl Display for SemVerRev {
@@ -142,7 +142,7 @@ impl<'de> Deserialize<'de> for SemVerRev {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct SemVerVendor(pub u8, pub u8, pub u8, pub String);
 
 impl Display for SemVerVendor {
