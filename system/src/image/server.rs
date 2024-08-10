@@ -827,7 +827,7 @@ pub mod miniconda {
         pub fn new(os: Os, info: MinicondaInfo) -> Self {
             let MinicondaInfo { version, hash_sha256, .. } = info.clone();
             let id = Miniconda;
-            let pkg_id = id.to_string();
+            let pkg_id = "conda";
             let url_version = info.url_version();
             let fetch_url = match os {
                 Linux(X64, _) => format!("https://repo.anaconda.com/miniconda/Miniconda3-{url_version}-0-Linux-x86_64.sh")
@@ -838,7 +838,7 @@ pub mod miniconda {
                 ServerImage(
                     id,
                     Package::new(
-                        &pkg_id.as_str(),
+                        pkg_id,
                         os,
                         Software::new("Anaconda, Inc", "Miniconda", &version.to_string()),
                         Url::parse("https://docs.anaconda.com/miniconda/miniconda-install").unwrap(),
