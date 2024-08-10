@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Node, Nvm, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -21,6 +21,7 @@ pub enum ServerImageId {
     Gradle,
     Nvm,
     Node,
+    Miniconda,
 }
 
 impl Display for ServerImageId {
@@ -33,6 +34,7 @@ impl Display for ServerImageId {
             Gradle => "gradle",
             Nvm => "nvm",
             Node => "node",
+            Miniconda => "miniconda",
         };
 
         write!(f, "{}", msg)
@@ -49,6 +51,7 @@ impl StrFind for ServerImageId {
             "gradle" => Some(Gradle),
             "nvm" => Some(Nvm),
             "node" => Some(Node),
+            "miniconda" => Some(Miniconda),
             _ => None
         }
     }
@@ -776,4 +779,177 @@ pub mod node {
     }
 
     impl ImageOps for NodeImage { image_ops_impl!(); }
+}
+
+pub mod miniconda {
+    use std::{env, fs};
+    use std::path::Path;
+    use std::process::Output;
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use Os::Linux;
+
+    use crate::{cmd, image_ops_impl};
+    use crate::cmd::exec_cmd;
+    use crate::download::{Downloader, DownloadRequest, Integrity};
+    use crate::download::hashing::Hash;
+    use crate::download::hashing::HashAlgorithm::Sha256;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Miniconda;
+    use crate::os::Os;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, SemVer, Software};
+    use crate::tmp::TmpWorkingDir;
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct MinicondaInfo {
+        version: SemVer,
+        hash_sha256: String,
+    }
+
+    pub struct MinicondaImage(ServerImage);
+
+    impl MinicondaImage {
+        pub fn new(
+            os: Os,
+            MinicondaInfo { version, hash_sha256 }: MinicondaInfo,
+        ) -> Self {
+            let id = Miniconda;
+            let pkg_id = id.to_string();
+            let fetch_url = match os {
+                Linux(X64, _) => "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+            };
+            let hash = Hash::new(Sha256, hash_sha256);
+
+            // TODO miniconda link is distributed under the "latest" version, so
+            // TODO "latest" is not necessarily the version of MinicondaInfo
+            // TODO so the download may reflect a greater version (incompatible
+            // TODO with the hash) than the expected version to install.
+
+            MinicondaImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        &pkg_id.as_str(),
+                        os,
+                        Software::new("Anaconda, Inc", "Miniconda", &version.to_string()),
+                        Url::parse("https://docs.anaconda.com/miniconda/miniconda-install").unwrap(),
+                        DownloadRequest::new(fetch_url, Integrity::Hash(hash)).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for MinicondaImage {
+        fn install(&self) -> Result<(), String> {
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let package = self.0.package();
+            let downloader = Downloader::from(package.fetch.clone(), &tmp);
+            let installer_file = downloader.path.clone();
+
+            println!("Downloading Miniconda installer...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())
+                .map_err(|error| if error.contains("integrity check") {
+                    format!(
+                        "{}\nHint: Make sure your miniconda.json has the latest version available {}",
+                        error,
+                        "https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links"
+                    )
+                } else { error })?;
+
+            println!("Installing Miniconda...");
+
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+            let output = exec_cmd(
+                "bash",
+                &[
+                    installer_file.to_str().unwrap(),
+                    "-b",
+                    "-u",
+                    "-p",
+                    miniconda_dir.to_str().unwrap()
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            println!("Miniconda installed.");
+
+            println!("Initializing miniconda.");
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "bash"],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "zsh"],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            println!("Miniconda installed and initialized.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for MinicondaImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+
+            let print_optional_step = |output: cmd::Result<Output>| match output {
+                Ok(o) => {
+                    println!("stdout: {}", String::from_utf8_lossy(&o.stdout));
+                    println!("stderr: {}", String::from_utf8_lossy(&o.stderr));
+                }
+                Err(error) => {
+                    eprintln!("Fail to remove conda initialization scripts (optional step): {}", error);
+                }
+            };
+
+            println!("Removing conda initialization scripts (optional step)...");
+
+            let output = exec_cmd(
+                "conda",
+                &["init", "--reverse", "--all"],
+            );
+
+            print_optional_step(output);
+
+            println!("Removing Miniconda files...");
+
+            fs::remove_dir_all(miniconda_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Miniconda uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for MinicondaImage { image_ops_impl!(); }
 }
