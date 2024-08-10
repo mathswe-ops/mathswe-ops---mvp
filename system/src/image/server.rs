@@ -804,30 +804,35 @@ pub mod miniconda {
     use crate::package::{Package, SemVer, Software};
     use crate::tmp::TmpWorkingDir;
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub struct MinicondaInfo {
         version: SemVer,
         hash_sha256: String,
+        python_version: SemVer,
+    }
+
+    impl MinicondaInfo {
+        fn url_version(&self) -> String {
+            let SemVer(py_major, py_minor, _) = self.clone().python_version;
+            let py_ver = format!("py{py_major}{py_minor}");
+            let conda_ver = self.clone().version;
+
+            format!("{py_ver}_{conda_ver}")
+        }
     }
 
     pub struct MinicondaImage(ServerImage);
 
     impl MinicondaImage {
-        pub fn new(
-            os: Os,
-            MinicondaInfo { version, hash_sha256 }: MinicondaInfo,
-        ) -> Self {
+        pub fn new(os: Os, info: MinicondaInfo) -> Self {
+            let MinicondaInfo { version, hash_sha256, .. } = info.clone();
             let id = Miniconda;
             let pkg_id = id.to_string();
+            let url_version = info.url_version();
             let fetch_url = match os {
-                Linux(X64, _) => "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+                Linux(X64, _) => format!("https://repo.anaconda.com/miniconda/Miniconda3-{url_version}-0-Linux-x86_64.sh")
             };
             let hash = Hash::new(Sha256, hash_sha256);
-
-            // TODO miniconda link is distributed under the "latest" version, so
-            // TODO "latest" is not necessarily the version of MinicondaInfo
-            // TODO so the download may reflect a greater version (incompatible
-            // TODO with the hash) than the expected version to install.
 
             MinicondaImage(
                 ServerImage(
@@ -837,7 +842,7 @@ pub mod miniconda {
                         os,
                         Software::new("Anaconda, Inc", "Miniconda", &version.to_string()),
                         Url::parse("https://docs.anaconda.com/miniconda/miniconda-install").unwrap(),
-                        DownloadRequest::new(fetch_url, Integrity::Hash(hash)).unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
                     ),
                 )
             )
@@ -857,14 +862,7 @@ pub mod miniconda {
 
             downloader
                 .download_blocking()
-                .map_err(|error| error.to_string())
-                .map_err(|error| if error.contains("integrity check") {
-                    format!(
-                        "{}\nHint: Make sure your miniconda.json has the latest version available {}",
-                        error,
-                        "https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links"
-                    )
-                } else { error })?;
+                .map_err(|error| error.to_string())?;
 
             println!("Installing Miniconda...");
 
@@ -919,7 +917,6 @@ pub mod miniconda {
             let miniconda_dir = env::var("HOME")
                 .map(|home| Path::new(&home).join("miniconda3"))
                 .map_err(|output| output.to_string())?;
-
 
             let print_optional_step = |output: cmd::Result<Output>| match output {
                 Ok(o) => {
