@@ -4,12 +4,13 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-
+use DesktopImageId::VsCode;
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
 use crate::image::desktop::DesktopImageId::Zoom;
+use crate::image::desktop::vscode::VsCodeImage;
 use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::go::GoImage;
 use crate::image::server::gradle::GradleImage;
@@ -44,6 +45,7 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
         let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
             Zoom => ctx.load(ZoomImage::new)?,
+            VsCode => ctx.load(VsCodeImage::new)?
         };
 
         Ok(image)
