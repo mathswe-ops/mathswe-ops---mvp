@@ -5,15 +5,15 @@
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
-use std::io::{ErrorKind, Write};
+use std::io::{ErrorKind};
 use std::path::{Path, PathBuf};
 
 use reqwest::{blocking, Url};
 
-use DownloadRequestError::{InsecureProtocol, InvalidUrl};
 use crate::download::gpg::GpgKey;
 use crate::download::hashing::Hash;
 use crate::tmp::TmpWorkingDir;
+use DownloadRequestError::{InsecureProtocol, InvalidUrl};
 
 pub mod hashing;
 pub mod gpg;
@@ -129,17 +129,18 @@ impl Downloader {
             .map_err(to_io_err(format!("Failed to fetch {}", url)))
             .and_then(|res| {
                 if res.status().is_success() {
-                    res
-                        .bytes()
-                        .map_err(|err| io_err(format!("Failed to read file bytes {}: {}", filename, err)))
-                } else {
+                    Ok(res)
+                }
+                else {
                     Err(io_err(format!("Failed to download {}: {}", filename, res.status())))
                 }
             })
-            .and_then(|bytes| {
-                self.to_file()
-                    .and_then(|mut file| file.write_all(&bytes))
-                    .map_err(|err| io_err(format!("Failed to write {}: {}", filename, err)))
+            .and_then(|mut res| {
+                let mut file = self.to_file()?;
+
+                res
+                    .copy_to(&mut file)
+                    .map_err(|err| io_err(format!("Failed to copy file {}: {}", filename, err)))
             })
             .and_then(|_| {
                 self.req
