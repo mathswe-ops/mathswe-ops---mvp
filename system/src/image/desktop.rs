@@ -6,7 +6,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::VsCode;
+use DesktopImageId::{JetBrainsToolbox, VsCode};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId::Zoom;
@@ -17,6 +17,7 @@ use crate::package::Package;
 pub enum DesktopImageId {
     Zoom,
     VsCode,
+    JetBrainsToolbox,
 }
 
 impl Display for DesktopImageId {
@@ -24,6 +25,7 @@ impl Display for DesktopImageId {
         let msg = match self {
             Zoom => "zoom",
             VsCode => "vscode",
+            JetBrainsToolbox => "jetbrains-toolbox"
         };
 
         write!(f, "{}", msg)
@@ -35,6 +37,7 @@ impl StrFind for DesktopImageId {
         match s {
             "zoom" => Some(Zoom),
             "vscode" => Some(VsCode),
+            "jetbrains-toolbox" => Some(JetBrainsToolbox),
             _ => None
         }
     }
@@ -354,10 +357,11 @@ pub mod vscode {
     #[cfg(test)]
     mod tests {
         use std::str::FromStr;
-        use crate::image::desktop::DesktopImageId::VsCode;
-        use crate::image::desktop::vscode::{VsCodeImage, VsCodeInfo};
+
         use crate::image::{Image, ToImageId};
         use crate::image::desktop::DesktopImageId;
+        use crate::image::desktop::DesktopImageId::VsCode;
+        use crate::image::desktop::vscode::{VsCodeImage, VsCodeInfo};
         use crate::os::UBUNTU_X64;
         use crate::package::SemVer;
 
@@ -392,4 +396,180 @@ pub mod vscode {
             assert_eq!("code", image.package().name);
         }
     }
+}
+
+pub mod jetbrains_toolbox {
+    use std::{env, fs};
+    use std::path::PathBuf;
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use Os::Linux;
+
+    use crate::cmd::exec_cmd;
+    use crate::download::{Downloader, DownloadRequest, Integrity};
+    use crate::download::hashing::Hash;
+    use crate::download::hashing::HashAlgorithm::Sha256;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image::desktop::DesktopImage;
+    use crate::image::desktop::DesktopImageId::JetBrainsToolbox;
+    use crate::image::Image;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, SemVerRev, Software};
+    use crate::tmp::TmpWorkingDir;
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct JetbrainsToolboxInfo {
+        version: SemVerRev,
+        hash_sha256: String,
+    }
+
+    pub struct JetBrainsToolboxImage(DesktopImage);
+
+    impl JetBrainsToolboxImage {
+        pub fn new(
+            os: Os,
+            JetbrainsToolboxInfo { version, hash_sha256 }: JetbrainsToolboxInfo,
+        ) -> Self {
+            let id = JetBrainsToolbox;
+            let pkg_name = id.to_string();
+            let fetch_url = match os {
+                Linux(X64, _) => format!("https://download.jetbrains.com/toolbox/jetbrains-toolbox-{version}.tar.gz")
+            };
+            let hash = Hash::new(Sha256, hash_sha256);
+
+            JetBrainsToolboxImage(DesktopImage(
+                id,
+                Package::new(
+                    &pkg_name,
+                    os,
+                    Software::new("JetBrains s.r.o.", "JetBrains Toolbox", &version.to_string()),
+                    Url::parse("https://www.jetbrains.com/toolbox-app").unwrap(),
+                    DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for JetBrainsToolboxImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing dependencies (FUSE)...");
+
+            let output = exec_cmd(
+                "sudo",
+                &["apt-get", "install", "libfuse2"],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let tmp_path = tmp.path();
+            let downloader = Downloader::from(self.0.package().fetch, &tmp);
+            let tar_file = downloader.path.clone();
+
+            println!("Downloading JetBrains Toolbox installer...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())?;
+
+            println!("Extracting JetBrains Toolbox installer...");
+
+            let output = exec_cmd(
+                "tar",
+                &[
+                    "-xvf",
+                    tar_file.to_str().unwrap(),
+                    "--directory",
+                    tmp_path.to_str().unwrap(),
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let installer_rel_path = stdout
+                .lines()
+                .last() // The tar only contains one single file (the installer binary)
+                .ok_or("Fail to read installer path from output of command tar")?;
+
+            println!("stdout: {}", stdout);
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            println!("Installing JetBrains Toolbox...");
+
+            let installer_file = tmp_path.join(installer_rel_path);
+            let install_cmd = format!("{}", installer_file.to_str().unwrap());
+            let output = exec_cmd(&install_cmd, &[])
+                .map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            println!("JetBrains Toolbox installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for JetBrainsToolboxImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling JetBrains Toolbox softly, IDEs will keep installed...");
+
+            let home = env::var("HOME")
+                .map(|home| PathBuf::from(&home))
+                .map_err(|error| error.to_string())?;
+
+            // Delete autostart file
+            let toolbox_autostart_file = home
+                .join(".config")
+                .join("autostart")
+                .join("jetbrains-toolbox.desktop");
+
+            fs::remove_file(toolbox_autostart_file)
+                .map_err(|error| error.to_string())?;
+
+            // Delete Toolbox files but ./apps
+            let toolbox_dir = home
+                .join(".local")
+                .join("share")
+                .join("JetBrains")
+                .join("Toolbox");
+
+            let dont_delete = toolbox_dir.join("apps");
+
+            let toolbox_entries = fs::read_dir(toolbox_dir)
+                .map_err(|error| error.to_string())?
+                .filter_map(|res| res.ok())
+                .map(|child| child.path())
+                .filter(|path| *path != dont_delete);
+
+            for entry in toolbox_entries {
+                if entry.is_dir() {
+                    fs::remove_dir_all(&entry).map_err(|error| error.to_string())?;
+                } else {
+                    fs::remove_file(&entry).map_err(|error| error.to_string())?;
+                }
+            }
+
+            // Delete applications file
+            let apps_toolbox_file = home
+                .join(".local")
+                .join("share")
+                .join("applications")
+                .join("jetbrains-toolbox.desktop");
+
+            fs::remove_file(apps_toolbox_file)
+                .map_err(|error| error.to_string())?;
+
+            println!("JetBrains Toolbox uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for JetBrainsToolboxImage { image_ops_impl!(); }
 }
