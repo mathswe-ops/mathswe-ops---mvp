@@ -664,7 +664,7 @@ pub mod jetbrains_ide {
         hash_sha256: String,
     }
 
-    pub struct JetBrainsIdeImage(DesktopImage);
+    pub struct JetBrainsIdeImage(DesktopImage, YearSemVer);
 
     impl JetBrainsIdeImage {
         fn new_fetch_url(
@@ -672,11 +672,7 @@ pub mod jetbrains_ide {
             id: JetBrainsIdeImageId,
             version: YearSemVer,
         ) -> String {
-            let simplified_version = match version {
-                YearSemVer(year, major, 0) => format!("{year}.{major}"),
-                _ => version.to_string()
-            };
-
+            let simplified_version = Self::get_simplified_version(version);
             let base_url = "https://download.jetbrains.com";
             let file_ext = match os {
                 Linux(X64, _) => format!("{simplified_version}.tar.gz")
@@ -703,12 +699,23 @@ pub mod jetbrains_ide {
                         Url::parse(&format!("https://www.jetbrains.com/{did}/download")).unwrap(),
                         DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
                     ),
-                ))
+                ), version)
             }
         }
 
         pub fn pycharm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(PyCharm)
+        }
+
+        fn get_simplified_version(version: YearSemVer) -> String {
+            match version {
+                YearSemVer(year, major, 0) => format!("{year}.{major}"),
+                _ => version.to_string()
+            }
+        }
+
+        fn simplified_version(&self) -> String {
+            Self::get_simplified_version(self.1.clone())
         }
     }
 
@@ -762,14 +769,14 @@ pub mod jetbrains_ide {
             println!("Moving {ide_name} files...");
 
             let ide_id = self.0.id();
-            let version = self.0.package().software.version;
+            let version = self.simplified_version();
             let extracted_dir_name = format!("{ide_id}-{version}");
             let extracted_dir_rel_path = Path::new(&extracted_dir_name);
             let ide_tmp_dir = tmp_path.join(extracted_dir_rel_path);
             let ide_dir = apps_dir.join(ide_id.to_string());
 
-            fs::rename(ide_tmp_dir, ide_dir.clone())
-                .map_err(|error| error.to_string())?;
+            fs::rename(ide_tmp_dir.clone(), ide_dir.clone())
+                .map_err(|error| format!("Fail to move {:?} to {:?}: {}", ide_tmp_dir, ide_dir, error))?;
 
             println!("Restarting JetBrains Toolbox to complete the installation...");
 
