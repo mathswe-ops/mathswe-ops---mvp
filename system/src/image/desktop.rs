@@ -618,14 +618,14 @@ pub mod jetbrains_toolbox {
     impl ImageOps for JetBrainsToolboxImage { image_ops_impl!(); }
 }
 
-pub mod pycharm {
+pub mod jetbrains_ide {
     use crate::cmd::exec_cmd;
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
     use crate::download::{DownloadRequest, Downloader, Integrity};
+    use crate::image::desktop::jetbrains_ide::JetBrainsIdeImageId::PyCharm;
     use crate::image::desktop::jetbrains_toolbox::{is_jetbrains_toolbox_installed, jetbrains_toolbox_rel_dir, restart_jetbrains_toolbox};
-    use crate::image::desktop::DesktopImage;
-    use crate::image::desktop::DesktopImageId::PyCharm;
+    use crate::image::desktop::{DesktopImage, DesktopImageId};
     use crate::image::Image;
     use crate::image::{ImageOps, Install, Uninstall};
     use crate::os::Os;
@@ -639,48 +639,84 @@ pub mod pycharm {
     use std::path::{Path, PathBuf};
     use std::{env, fs};
 
+    #[derive(Clone)]
+    pub enum JetBrainsIdeImageId {
+        PyCharm
+    }
+
+    impl JetBrainsIdeImageId {
+        pub fn to_desktop_image_id(&self) -> DesktopImageId {
+            match self {
+                PyCharm => DesktopImageId::PyCharm
+            }
+        }
+
+        pub fn name(&self) -> &str {
+            match self {
+                PyCharm => "PyCharm"
+            }
+        }
+    }
+
     #[derive(Clone, Debug, Serialize, Deserialize)]
-    pub struct PyCharmInfo {
+    pub struct JetBrainsIdeInfo {
         version: YearSemVer,
         hash_sha256: String,
     }
 
-    pub struct PyCharmImage(DesktopImage);
+    pub struct JetBrainsIdeImage(DesktopImage);
 
-    impl PyCharmImage {
-        pub fn new(
+    impl JetBrainsIdeImage {
+        fn new_fetch_url(
             os: Os,
-            PyCharmInfo { version, hash_sha256 }: PyCharmInfo,
-        ) -> Self {
-            let id = PyCharm;
-            let pkg_name = id.to_string();
-            let fetch_url = match os {
-                Linux(X64, _) => format!("https://download.jetbrains.com/python/pycharm-professional-{version}.tar.gz")
+            id: JetBrainsIdeImageId,
+            version: YearSemVer,
+        ) -> String {
+            let base_url = "https://download.jetbrains.com";
+            let file_ext = match os {
+                Linux(X64, _) => format!("{version}.tar.gz")
             };
-            let hash = Hash::new(Sha256, hash_sha256);
 
-            PyCharmImage(DesktopImage(
-                id,
-                Package::new(
-                    &pkg_name,
-                    os,
-                    Software::new("JetBrains s.r.o.", "PyCharm", &version.to_string()),
-                    Url::parse("https://www.jetbrains.com/pycharm/download").unwrap(),
-                    DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
-                ),
-            ))
+            match id {
+                PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}")
+            }
+        }
+
+        pub fn new(id: JetBrainsIdeImageId) -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            move |os: Os, JetBrainsIdeInfo { version, hash_sha256 }: JetBrainsIdeInfo| {
+                let did = id.to_desktop_image_id();
+                let pkg_name = did.to_string();
+                let fetch_url = Self::new_fetch_url(os.clone(), id.clone(), version.clone());
+                let hash = Hash::new(Sha256, hash_sha256);
+
+                JetBrainsIdeImage(DesktopImage(
+                    did.clone(),
+                    Package::new(
+                        &pkg_name,
+                        os,
+                        Software::new("JetBrains s.r.o.", id.name(), &version.to_string()),
+                        Url::parse(&format!("https://www.jetbrains.com/{did}/download")).unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
+                    ),
+                ))
+            }
+        }
+
+        pub fn pycharm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(PyCharm)
         }
     }
 
-    impl Install for PyCharmImage {
+    impl Install for JetBrainsIdeImage {
         fn install(&self) -> Result<(), String> {
+            let ide_name = self.0.package().software.name;
             let is_toolbox_installed = is_jetbrains_toolbox_installed()?;
 
             if !is_toolbox_installed {
                 return Err("JetBrains Toolbox is required to install JetBrains IDEs but is not installed in your system. Install JetBrains Toolbox first.".to_string());
             }
 
-            println!("Installing PyCharm");
+            println!("Installing {ide_name}");
 
             let tmp = TmpWorkingDir::new()
                 .map_err(|error| error.to_string())?;
@@ -689,13 +725,13 @@ pub mod pycharm {
             let downloader = Downloader::from(self.0.package().fetch, &tmp);
             let tar_file = downloader.path.clone();
 
-            println!("Downloading PyCharm...");
+            println!("Downloading {ide_name}...");
 
             downloader
                 .download_blocking()
                 .map_err(|error| error.to_string())?;
 
-            println!("Extracting PyCharm...");
+            println!("Extracting {ide_name}...");
 
             let home = env::var("HOME")
                 .map(|home| PathBuf::from(&home))
@@ -718,30 +754,33 @@ pub mod pycharm {
 
             cmd::print_output(output);
 
-            println!("Moving PyCharm files...");
+            println!("Moving {ide_name} files...");
 
+            let ide_id = self.0.id();
             let version = self.0.package().software.version;
-            let extracted_dir_name = format!("pycharm-{version}");
+            let extracted_dir_name = format!("{ide_id}-{version}");
             let extracted_dir_rel_path = Path::new(&extracted_dir_name);
-            let pycharm_tmp_dir = tmp_path.join(extracted_dir_rel_path);
-            let pycharm_dir = apps_dir.join("pycharm");
+            let ide_tmp_dir = tmp_path.join(extracted_dir_rel_path);
+            let ide_dir = apps_dir.join(ide_id.to_string());
 
-            fs::rename(pycharm_tmp_dir, pycharm_dir.clone())
+            fs::rename(ide_tmp_dir, ide_dir.clone())
                 .map_err(|error| error.to_string())?;
 
             println!("Restarting JetBrains Toolbox to complete the installation...");
 
             restart_jetbrains_toolbox(self.0.package().os)?;
 
-            println!("PyCharm installed.");
+            println!("{ide_name} installed.");
 
             Ok(())
         }
     }
 
-    impl Uninstall for PyCharmImage {
+    impl Uninstall for JetBrainsIdeImage {
         fn uninstall(&self) -> Result<(), String> {
-            println!("Uninstalling PyCharm");
+            let ide_name = self.0.package().software.name;
+
+            println!("Uninstalling {ide_name}");
 
             let home = env::var("HOME")
                 .map(|home| PathBuf::from(&home))
@@ -753,24 +792,25 @@ pub mod pycharm {
                 .join("JetBrains")
                 .join("Toolbox");
 
-            println!("Removing PyCharm files...");
+            println!("Removing {ide_name} files...");
 
-            let pycharm_dir = toolbox_dir
+            let ide_id = self.0.id();
+            let ide_dir = toolbox_dir
                 .join("apps")
-                .join("pycharm");
+                .join(ide_id.to_string());
 
-            fs::remove_dir_all(pycharm_dir)
+            fs::remove_dir_all(ide_dir)
                 .map_err(|error| error.to_string())?;
 
             println!("Restarting JetBrains Toolbox to complete the uninstallation...");
 
             restart_jetbrains_toolbox(self.0.package().os)?;
 
-            println!("PyCharm uninstalled.");
+            println!("{ide_name} uninstalled.");
 
             Ok(())
         }
     }
 
-    impl ImageOps for PyCharmImage { image_ops_impl!(); }
+    impl ImageOps for JetBrainsIdeImage { image_ops_impl!(); }
 }
