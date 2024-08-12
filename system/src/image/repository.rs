@@ -4,13 +4,14 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use DesktopImageId::{JetBrainsToolbox, VsCode};
+use DesktopImageId::{JetBrainsToolbox, PyCharm, VsCode};
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId;
 use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::jetbrains_toolbox::JetBrainsToolboxImage;
+use crate::image::desktop::pycharm::PyCharmImage;
 use crate::image::desktop::vscode::VsCodeImage;
 use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::go::GoImage;
@@ -47,7 +48,8 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
         let image = match self.id {
             Zoom => ctx.load(ZoomImage::new)?,
             VsCode => ctx.load(VsCodeImage::new)?,
-            JetBrainsToolbox => ctx.load(JetBrainsToolboxImage::new)?
+            JetBrainsToolbox => ctx.load(JetBrainsToolboxImage::new)?,
+            PyCharm => ctx.load(PyCharmImage::new)?
         };
 
         Ok(image)

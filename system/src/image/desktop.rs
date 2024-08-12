@@ -6,10 +6,10 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::{JetBrainsToolbox, VsCode};
+use DesktopImageId::{JetBrainsToolbox, PyCharm, VsCode};
 
-use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::image::desktop::DesktopImageId::Zoom;
+use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
 use crate::package::Package;
 
@@ -18,6 +18,7 @@ pub enum DesktopImageId {
     Zoom,
     VsCode,
     JetBrainsToolbox,
+    PyCharm,
 }
 
 impl Display for DesktopImageId {
@@ -25,7 +26,8 @@ impl Display for DesktopImageId {
         let msg = match self {
             Zoom => "zoom",
             VsCode => "vscode",
-            JetBrainsToolbox => "jetbrains-toolbox"
+            JetBrainsToolbox => "jetbrains-toolbox",
+            PyCharm => "pycharm",
         };
 
         write!(f, "{}", msg)
@@ -38,6 +40,7 @@ impl StrFind for DesktopImageId {
             "zoom" => Some(Zoom),
             "vscode" => Some(VsCode),
             "jetbrains-toolbox" => Some(JetBrainsToolbox),
+            "pycharm" => Some(PyCharm),
             _ => None
         }
     }
@@ -68,11 +71,11 @@ pub mod zoom {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::download::{Downloader, DownloadRequest, Integrity};
     use crate::download::gpg::GpgKey;
-    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::Zoom;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::LinuxType::Ubuntu;
     use crate::os::Os;
@@ -169,9 +172,9 @@ pub mod zoom {
 
         use crate::download::gpg::GpgKey;
         use crate::download::Integrity;
+        use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};
         use crate::image::desktop::DesktopImage;
         use crate::image::desktop::DesktopImageId::Zoom;
-        use crate::image::desktop::zoom::{ZoomImage, ZoomInfo};
         use crate::image::ImageInfoLoader;
         use crate::os::UBUNTU_X64;
         use crate::package::SemVerRev;
@@ -214,18 +217,18 @@ pub mod zoom {
 }
 
 pub mod vscode {
-    use reqwest::{blocking, Url};
     use reqwest::redirect::Policy;
+    use reqwest::{blocking, Url};
     use serde::{Deserialize, Serialize};
 
     use Os::Linux;
 
-    use crate::download::{Downloader, DownloadRequest, Integrity};
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
-    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::VsCode;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::OsArch::X64;
@@ -358,10 +361,10 @@ pub mod vscode {
     mod tests {
         use std::str::FromStr;
 
-        use crate::image::{Image, ToImageId};
+        use crate::image::desktop::vscode::{VsCodeImage, VsCodeInfo};
         use crate::image::desktop::DesktopImageId;
         use crate::image::desktop::DesktopImageId::VsCode;
-        use crate::image::desktop::vscode::{VsCodeImage, VsCodeInfo};
+        use crate::image::{Image, ToImageId};
         use crate::os::UBUNTU_X64;
         use crate::package::SemVer;
 
@@ -399,22 +402,21 @@ pub mod vscode {
 }
 
 pub mod jetbrains_toolbox {
-    use std::{env, fs};
     use std::path::PathBuf;
-
+    use std::{env, fs};
+    use std::process::Output;
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
-
     use Os::Linux;
 
     use crate::cmd::exec_cmd;
-    use crate::download::{Downloader, DownloadRequest, Integrity};
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
-    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::JetBrainsToolbox;
     use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::OsArch::X64;
@@ -425,6 +427,42 @@ pub mod jetbrains_toolbox {
     pub struct JetbrainsToolboxInfo {
         version: SemVerRev,
         hash_sha256: String,
+    }
+
+    pub fn jetbrains_toolbox_rel_dir() -> PathBuf {
+        PathBuf::new()
+            .join(".local")
+            .join("share")
+            .join("JetBrains")
+            .join("Toolbox")
+    }
+
+    pub fn is_jetbrains_toolbox_installed() -> Result<bool, String> {
+        let rel_dir = jetbrains_toolbox_rel_dir();
+
+        env::var("HOME")
+            .map(|home| PathBuf::from(&home).join(rel_dir))
+            .map_err(|error| error.to_string())?
+            .try_exists()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn open_jetbrains_toolbox() -> Result<Output, String> {
+        let toolbox_bin = env::var("HOME")
+            .map(|home| PathBuf::from(&home))
+            .map_err(|error| error.to_string())?
+            .join(".local")
+            .join("share")
+            .join("JetBrains")
+            .join("Toolbox")
+            .join("bin")
+            .join("jetbrains-toolbox");
+
+        // TODO change the approach.
+        // TODO if the app is opened it probably does nothing
+        // TODO if it's closed it waits forever
+        exec_cmd(toolbox_bin.to_str().unwrap(), &[])
+            .map_err(|error| error.to_string())
     }
 
     pub struct JetBrainsToolboxImage(DesktopImage);
@@ -533,12 +571,7 @@ pub mod jetbrains_toolbox {
                 .map_err(|error| error.to_string())?;
 
             // Delete Toolbox files but ./apps
-            let toolbox_dir = home
-                .join(".local")
-                .join("share")
-                .join("JetBrains")
-                .join("Toolbox");
-
+            let toolbox_dir = home.join(jetbrains_toolbox_rel_dir());
             let dont_delete = toolbox_dir.join("apps");
 
             let toolbox_entries = fs::read_dir(toolbox_dir)
@@ -555,7 +588,7 @@ pub mod jetbrains_toolbox {
                 }
             }
 
-            // Delete applications file
+            // Delete applications desktop file
             let apps_toolbox_file = home
                 .join(".local")
                 .join("share")
@@ -572,4 +605,165 @@ pub mod jetbrains_toolbox {
     }
 
     impl ImageOps for JetBrainsToolboxImage { image_ops_impl!(); }
+}
+
+pub mod pycharm {
+    use crate::cmd::exec_cmd;
+    use crate::download::hashing::Hash;
+    use crate::download::hashing::HashAlgorithm::Sha256;
+    use crate::download::{DownloadRequest, Downloader, Integrity};
+    use crate::image::desktop::jetbrains_toolbox::{is_jetbrains_toolbox_installed, jetbrains_toolbox_rel_dir, open_jetbrains_toolbox};
+    use crate::image::desktop::DesktopImage;
+    use crate::image::desktop::DesktopImageId::PyCharm;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::os::Os;
+    use crate::os::Os::Linux;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, Software, YearSemVer};
+    use crate::tmp::TmpWorkingDir;
+    use crate::{cmd, image_ops_impl};
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+    use std::path::{Path, PathBuf};
+    use std::{env, fs};
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct PyCharmInfo {
+        version: YearSemVer,
+        hash_sha256: String,
+    }
+
+    pub struct PyCharmImage(DesktopImage);
+
+    impl PyCharmImage {
+        pub fn new(
+            os: Os,
+            PyCharmInfo { version, hash_sha256 }: PyCharmInfo,
+        ) -> Self {
+            let id = PyCharm;
+            let pkg_name = id.to_string();
+            let fetch_url = match os {
+                Linux(X64, _) => format!("https://download.jetbrains.com/python/pycharm-professional-{version}.tar.gz")
+            };
+            let hash = Hash::new(Sha256, hash_sha256);
+
+            PyCharmImage(DesktopImage(
+                id,
+                Package::new(
+                    &pkg_name,
+                    os,
+                    Software::new("JetBrains s.r.o.", "PyCharm", &version.to_string()),
+                    Url::parse("https://www.jetbrains.com/pycharm/download").unwrap(),
+                    DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for PyCharmImage {
+        fn install(&self) -> Result<(), String> {
+            let is_toolbox_installed = is_jetbrains_toolbox_installed()?;
+
+            if !is_toolbox_installed {
+                return Err("JetBrains Toolbox is required to install JetBrains IDEs but is not installed in your system. Install JetBrains Toolbox first.".to_string());
+            }
+
+            println!("Installing PyCharm");
+
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let tmp_path = tmp.path();
+            let downloader = Downloader::from(self.0.package().fetch, &tmp);
+            let tar_file = downloader.path.clone();
+
+            println!("Downloading PyCharm...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())?;
+
+            println!("Extracting PyCharm...");
+
+            let home = env::var("HOME")
+                .map(|home| PathBuf::from(&home))
+                .map_err(|error| error.to_string())?;
+
+            let toolbox_rel_dir = jetbrains_toolbox_rel_dir();
+            let apps_dir = home
+                .join(toolbox_rel_dir.clone())
+                .join("apps");
+
+            let output = exec_cmd(
+                "tar",
+                &[
+                    "-xf",
+                    tar_file.to_str().unwrap(),
+                    "--directory",
+                    tmp_path.to_str().unwrap(),
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            cmd::print_output(output);
+
+            println!("Moving PyCharm files...");
+
+            let version = self.0.package().software.version;
+            let extracted_dir_name = format!("pycharm-{version}");
+            let extracted_dir_rel_path = Path::new(&extracted_dir_name);
+            let pycharm_tmp_dir = tmp_path.join(extracted_dir_rel_path);
+            let pycharm_dir = apps_dir.join("pycharm");
+
+            fs::rename(pycharm_tmp_dir, pycharm_dir.clone())
+                .map_err(|error| error.to_string())?;
+
+            println!("Opening JetBrains Toolbox to complete the installation...");
+
+            let output = open_jetbrains_toolbox()?;
+
+            cmd::print_output(output);
+
+            println!("PyCharm installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for PyCharmImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling PyCharm");
+
+            let home = env::var("HOME")
+                .map(|home| PathBuf::from(&home))
+                .map_err(|error| error.to_string())?;
+
+            let toolbox_dir = home
+                .join(".local")
+                .join("share")
+                .join("JetBrains")
+                .join("Toolbox");
+
+            println!("Removing PyCharm files...");
+
+            let pycharm_dir = toolbox_dir
+                .join("apps")
+                .join("pycharm");
+
+            fs::remove_dir_all(pycharm_dir)
+                .map_err(|error| error.to_string())?;
+
+            println!("Opening JetBrains Toolbox to complete the uninstallation...");
+
+            let output = open_jetbrains_toolbox()?;
+
+            cmd::print_output(output);
+
+            println!("PyCharm uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for PyCharmImage { image_ops_impl!(); }
 }
