@@ -119,3 +119,16 @@ fn get_running_processes_ubuntu() -> Result<Vec<String>, String> {
 
     Ok(processes)
 }
+
+pub fn kill_process(os: Os, process_name: &str) -> Result<(), String> {
+    match os {
+        Linux(X64, Ubuntu) => kill_process_ubuntu(process_name)
+    }
+}
+
+fn kill_process_ubuntu(process_name: &str) -> Result<(), String> {
+    exec_cmd("killall", &[process_name])
+        .map_err(|error| error.to_string())?;
+
+    Ok(())
+}
