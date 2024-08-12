@@ -86,6 +86,19 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
         .and_then(wait_child)
 }
 
+pub fn print_output(output: Output) {
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    if !stdout.trim().is_empty() {
+        println!("stdout: {stdout}");
+    }
+
+    if !stderr.trim().is_empty() {
+        println!("stderr: {stderr}");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
