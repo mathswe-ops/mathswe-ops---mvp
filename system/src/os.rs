@@ -101,6 +101,9 @@ pub fn detect_os() -> io::Result<Option<Os>> {
     }
 }
 
+/// Notice: It may return a list of truncated process names, so check for
+/// prefixes when trying to find a process name. For example, it may return
+/// "jetbrains-toolb" instead of "jetbrains-toolbox."
 pub fn get_running_processes(os: Os) -> Result<Vec<String>, String> {
     match os {
         Linux(X64, Ubuntu) => get_running_processes_ubuntu()
