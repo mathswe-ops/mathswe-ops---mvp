@@ -672,9 +672,14 @@ pub mod jetbrains_ide {
             id: JetBrainsIdeImageId,
             version: YearSemVer,
         ) -> String {
+            let simplified_version = match version {
+                YearSemVer(year, major, 0) => format!("{year}.{major}"),
+                _ => version.to_string()
+            };
+
             let base_url = "https://download.jetbrains.com";
             let file_ext = match os {
-                Linux(X64, _) => format!("{version}.tar.gz")
+                Linux(X64, _) => format!("{simplified_version}.tar.gz")
             };
 
             match id {
