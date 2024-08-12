@@ -3,6 +3,7 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::io;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use LinuxType::Ubuntu;
 use OsArch::X64;
@@ -98,4 +99,23 @@ pub fn detect_os() -> io::Result<Option<Os>> {
     } else {
         Ok(None)
     }
+}
+
+pub fn get_running_processes(os: Os) -> Result<Vec<String>, String> {
+    match os {
+        Linux(X64, Ubuntu) => get_running_processes_ubuntu()
+    }
+}
+
+fn get_running_processes_ubuntu() -> Result<Vec<String>, String> {
+    let output = exec_cmd("ps", &["-e", "-o", "comm="])
+        .map_err(|error| error.to_string())?;
+
+    let reader = BufReader::new(&output.stdout[..]);
+    let processes = reader
+        .lines()
+        .filter_map(|line| line.ok())  // Remove any errors
+        .collect::<Vec<String>>();
+
+    Ok(processes)
 }
