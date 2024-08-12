@@ -402,14 +402,13 @@ pub mod vscode {
 }
 
 pub mod jetbrains_toolbox {
-    use std::path::PathBuf;
-    use std::{env, fs};
-    use std::process::Output;
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
+    use std::path::PathBuf;
+    use std::{env, fs};
     use Os::Linux;
 
-    use crate::cmd::exec_cmd;
+    use crate::cmd::{exec_cmd, exec_cmd_async};
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
     use crate::download::{DownloadRequest, Downloader, Integrity};
@@ -418,8 +417,8 @@ pub mod jetbrains_toolbox {
     use crate::image::Image;
     use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
-    use crate::os::Os;
     use crate::os::OsArch::X64;
+    use crate::os::{get_running_processes, kill_process_and_wait, Os};
     use crate::package::{Package, SemVerRev, Software};
     use crate::tmp::TmpWorkingDir;
 
@@ -447,7 +446,9 @@ pub mod jetbrains_toolbox {
             .map_err(|error| error.to_string())
     }
 
-    pub fn open_jetbrains_toolbox() -> Result<Output, String> {
+    pub fn restart_jetbrains_toolbox(os: Os) -> Result<(), String> {
+        let bin_name = "jetbrains-toolbox";
+        let bin_name_prefix = "jetbrains-tool";
         let toolbox_bin = env::var("HOME")
             .map(|home| PathBuf::from(&home))
             .map_err(|error| error.to_string())?
@@ -456,12 +457,22 @@ pub mod jetbrains_toolbox {
             .join("JetBrains")
             .join("Toolbox")
             .join("bin")
-            .join("jetbrains-toolbox");
+            .join(bin_name);
 
-        // TODO change the approach.
-        // TODO if the app is opened it probably does nothing
-        // TODO if it's closed it waits forever
-        exec_cmd(toolbox_bin.to_str().unwrap(), &[])
+        let is_running = get_running_processes(os.clone())?
+            .iter()
+            .any(|process| process.starts_with("jetbrains-tool"));
+
+        if is_running {
+            println!("Killing process {}...", bin_name);
+
+            kill_process_and_wait(os, bin_name, bin_name_prefix)?;
+        }
+
+        println!("Opening process {} (async)...", bin_name);
+
+        exec_cmd_async(toolbox_bin.to_str().unwrap(), &[])
+            .map(|_| ())
             .map_err(|error| error.to_string())
     }
 
@@ -612,7 +623,7 @@ pub mod pycharm {
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
     use crate::download::{DownloadRequest, Downloader, Integrity};
-    use crate::image::desktop::jetbrains_toolbox::{is_jetbrains_toolbox_installed, jetbrains_toolbox_rel_dir, open_jetbrains_toolbox};
+    use crate::image::desktop::jetbrains_toolbox::{is_jetbrains_toolbox_installed, jetbrains_toolbox_rel_dir, restart_jetbrains_toolbox};
     use crate::image::desktop::DesktopImage;
     use crate::image::desktop::DesktopImageId::PyCharm;
     use crate::image::Image;
@@ -718,11 +729,9 @@ pub mod pycharm {
             fs::rename(pycharm_tmp_dir, pycharm_dir.clone())
                 .map_err(|error| error.to_string())?;
 
-            println!("Opening JetBrains Toolbox to complete the installation...");
+            println!("Restarting JetBrains Toolbox to complete the installation...");
 
-            let output = open_jetbrains_toolbox()?;
-
-            cmd::print_output(output);
+            restart_jetbrains_toolbox(self.0.package().os)?;
 
             println!("PyCharm installed.");
 
@@ -753,11 +762,9 @@ pub mod pycharm {
             fs::remove_dir_all(pycharm_dir)
                 .map_err(|error| error.to_string())?;
 
-            println!("Opening JetBrains Toolbox to complete the uninstallation...");
+            println!("Restarting JetBrains Toolbox to complete the uninstallation...");
 
-            let output = open_jetbrains_toolbox()?;
-
-            cmd::print_output(output);
+            restart_jetbrains_toolbox(self.0.package().os)?;
 
             println!("PyCharm uninstalled.");
 
