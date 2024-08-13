@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use DesktopImageId::{JetBrainsToolbox, PyCharm, VsCode};
 
-use crate::image::desktop::DesktopImageId::Zoom;
+use crate::image::desktop::DesktopImageId::{WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
 use crate::package::Package;
@@ -18,6 +18,7 @@ pub enum DesktopImageId {
     Zoom,
     VsCode,
     JetBrainsToolbox,
+    WebStorm,
     PyCharm,
 }
 
@@ -27,6 +28,7 @@ impl Display for DesktopImageId {
             Zoom => "zoom",
             VsCode => "vscode",
             JetBrainsToolbox => "jetbrains-toolbox",
+            WebStorm => "webstorm",
             PyCharm => "pycharm",
         };
 
@@ -40,6 +42,7 @@ impl StrFind for DesktopImageId {
             "zoom" => Some(Zoom),
             "vscode" => Some(VsCode),
             "jetbrains-toolbox" => Some(JetBrainsToolbox),
+            "webstorm" => Some(WebStorm),
             "pycharm" => Some(PyCharm),
             _ => None
         }
@@ -623,7 +626,7 @@ pub mod jetbrains_ide {
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
     use crate::download::{DownloadRequest, Downloader, Integrity};
-    use crate::image::desktop::jetbrains_ide::JetBrainsIdeImageId::PyCharm;
+    use crate::image::desktop::jetbrains_ide::JetBrainsIdeImageId::{PyCharm, WebStorm};
     use crate::image::desktop::jetbrains_toolbox::{is_jetbrains_toolbox_installed, jetbrains_toolbox_rel_dir, restart_jetbrains_toolbox};
     use crate::image::desktop::{DesktopImage, DesktopImageId};
     use crate::image::Image;
@@ -641,19 +644,22 @@ pub mod jetbrains_ide {
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
-        PyCharm
+        WebStorm,
+        PyCharm,
     }
 
     impl JetBrainsIdeImageId {
         pub fn to_desktop_image_id(&self) -> DesktopImageId {
             match self {
-                PyCharm => DesktopImageId::PyCharm
+                WebStorm => DesktopImageId::WebStorm,
+                PyCharm => DesktopImageId::PyCharm,
             }
         }
 
         pub fn name(&self) -> &str {
             match self {
-                PyCharm => "PyCharm"
+                WebStorm => "WebStorm",
+                PyCharm => "PyCharm",
             }
         }
     }
@@ -679,7 +685,8 @@ pub mod jetbrains_ide {
             };
 
             match id {
-                PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}")
+                WebStorm => format!("{base_url}/webstorm/WebStorm-{file_ext}"),
+                PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}"),
             }
         }
 
@@ -701,6 +708,10 @@ pub mod jetbrains_ide {
                     ),
                 ))
             }
+        }
+
+        pub fn webstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(WebStorm)
         }
 
         pub fn pycharm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
