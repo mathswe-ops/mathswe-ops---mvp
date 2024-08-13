@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use DesktopImageId::{CLion, Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, Rider, VsCode};
 
-use crate::image::desktop::DesktopImageId::{PhpStorm, WebStorm, Zoom};
+use crate::image::desktop::DesktopImageId::{PhpStorm, RubyMine, WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
 use crate::package::Package;
@@ -25,6 +25,7 @@ pub enum DesktopImageId {
     Goland,
     Rider,
     PhpStorm,
+    RubyMine
 }
 
 impl Display for DesktopImageId {
@@ -40,6 +41,7 @@ impl Display for DesktopImageId {
             Goland => "goland",
             Rider => "rider",
             PhpStorm => "phpstorm",
+            RubyMine => "rubymine",
         };
 
         write!(f, "{}", msg)
@@ -59,6 +61,7 @@ impl StrFind for DesktopImageId {
             "goland" => Some(Goland),
             "rider" => Some(Rider),
             "phpstorm" => Some(PhpStorm),
+            "rubymine" => Some(RubyMine),
             _ => None
         }
     }
@@ -667,7 +670,7 @@ pub mod jetbrains_ide {
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
     use std::{env, fs};
-    use JetBrainsIdeImageId::{CLion, Goland, IntelliJIdea, PhpStorm, Rider};
+    use JetBrainsIdeImageId::{CLion, Goland, IntelliJIdea, PhpStorm, Rider, RubyMine};
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
@@ -678,6 +681,7 @@ pub mod jetbrains_ide {
         Goland,
         Rider,
         PhpStorm,
+        RubyMine,
     }
 
     impl JetBrainsIdeImageId {
@@ -690,6 +694,7 @@ pub mod jetbrains_ide {
                 Goland => DesktopImageId::Goland,
                 Rider => DesktopImageId::Rider,
                 PhpStorm => DesktopImageId::PhpStorm,
+                RubyMine => DesktopImageId::RubyMine,
             }
         }
 
@@ -709,6 +714,7 @@ pub mod jetbrains_ide {
                 Goland => "GoLand",
                 Rider => "Rider",
                 PhpStorm => "PhpStorm",
+                RubyMine => "RubyMine",
             }
         }
     }
@@ -741,6 +747,7 @@ pub mod jetbrains_ide {
                 Goland => format!("{base_url}/go/goland-{file_ext}"),
                 Rider => format!("{base_url}/rider/JetBrains.Rider-{file_ext}"),
                 PhpStorm => format!("{base_url}/webide/PhpStorm-{file_ext}"),
+                RubyMine => format!("{base_url}/ruby/RubyMine-{file_ext}"),
             }
         }
 
@@ -790,6 +797,10 @@ pub mod jetbrains_ide {
 
         pub fn phpstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(PhpStorm)
+        }
+
+        pub fn rubymine() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(RubyMine)
         }
 
         fn get_simplified_version(version: YearSemVer) -> String {

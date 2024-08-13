@@ -4,7 +4,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use DesktopImageId::{CLion, Goland, IntelliJIdea, JetBrainsToolbox, PhpStorm, PyCharm, Rider, VsCode, WebStorm};
+use DesktopImageId::{CLion, Goland, IntelliJIdea, JetBrainsToolbox, PhpStorm, PyCharm, Rider, RubyMine, VsCode, WebStorm};
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
@@ -56,6 +56,7 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
             Goland => ctx.load(JetBrainsIdeImage::goland())?,
             Rider => ctx.load(JetBrainsIdeImage::rider())?,
             PhpStorm => ctx.load(JetBrainsIdeImage::phpstorm())?,
+            RubyMine => ctx.load(JetBrainsIdeImage::rubymine())?,
         };
 
         Ok(image)
