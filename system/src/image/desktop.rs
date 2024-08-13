@@ -6,7 +6,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::{IntelliJIdea, JetBrainsToolbox, PyCharm, VsCode};
+use DesktopImageId::{Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, VsCode};
 
 use crate::image::desktop::DesktopImageId::{PhpStorm, WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
@@ -21,6 +21,7 @@ pub enum DesktopImageId {
     IntelliJIdea,
     WebStorm,
     PyCharm,
+    Goland,
     PhpStorm,
 }
 
@@ -33,6 +34,7 @@ impl Display for DesktopImageId {
             IntelliJIdea => "intellij-idea",
             WebStorm => "webstorm",
             PyCharm => "pycharm",
+            Goland => "goland",
             PhpStorm => "phpstorm",
         };
 
@@ -49,6 +51,7 @@ impl StrFind for DesktopImageId {
             "intellij-idea" => Some(IntelliJIdea),
             "webstorm" => Some(WebStorm),
             "pycharm" => Some(PyCharm),
+            "goland" => Some(Goland),
             "phpstorm" => Some(PhpStorm),
             _ => None
         }
@@ -647,13 +650,14 @@ pub mod jetbrains_ide {
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
     use std::{env, fs};
-    use JetBrainsIdeImageId::{IntelliJIdea, PhpStorm};
+    use JetBrainsIdeImageId::{Goland, IntelliJIdea, PhpStorm};
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
         IntelliJIdea,
         WebStorm,
         PyCharm,
+        Goland,
         PhpStorm,
     }
 
@@ -663,6 +667,7 @@ pub mod jetbrains_ide {
                 IntelliJIdea => DesktopImageId::IntelliJIdea,
                 WebStorm => DesktopImageId::WebStorm,
                 PyCharm => DesktopImageId::PyCharm,
+                Goland => DesktopImageId::Goland,
                 PhpStorm => DesktopImageId::PhpStorm,
             }
         }
@@ -679,6 +684,7 @@ pub mod jetbrains_ide {
                 IntelliJIdea => "IntelliJ IDEA",
                 WebStorm => "WebStorm",
                 PyCharm => "PyCharm",
+                Goland => "GoLand",
                 PhpStorm => "PhpStorm",
             }
         }
@@ -708,6 +714,7 @@ pub mod jetbrains_ide {
                 IntelliJIdea => format!("{base_url}/idea/ideaIU-{file_ext}"),
                 WebStorm => format!("{base_url}/webstorm/WebStorm-{file_ext}"),
                 PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}"),
+                Goland => format!("{base_url}/go/goland-{file_ext}"),
                 PhpStorm => format!("{base_url}/webide/PhpStorm-{file_ext}"),
             }
         }
@@ -742,6 +749,10 @@ pub mod jetbrains_ide {
 
         pub fn pycharm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(PyCharm)
+        }
+
+        pub fn goland() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(Goland)
         }
 
         pub fn phpstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
