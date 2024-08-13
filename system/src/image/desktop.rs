@@ -27,7 +27,7 @@ pub enum DesktopImageId {
     Goland,
     Rider,
     PhpStorm,
-    RubyMine
+    RubyMine,
 }
 
 impl Display for DesktopImageId {
@@ -503,7 +503,7 @@ pub mod jetbrains_toolbox {
                     .map(|_| ())
                     .map_err(|error| format!("Fail attempt to execute process {bin_name} after previous fail to kill it: {error}"))?;
 
-                return Err(format!("{error}\n"))
+                return Err(format!("{error}\n"));
             }
         }
 
@@ -745,7 +745,7 @@ pub mod jetbrains_ide {
             id: JetBrainsIdeImageId,
             version: YearSemVer,
         ) -> String {
-            let simplified_version = Self::get_simplified_version(version);
+            let simplified_version = version.to_simplified_string();
             let base_url = "https://download.jetbrains.com";
             let file_ext = match os {
                 Linux(X64, _) => format!("{simplified_version}.tar.gz")
@@ -823,13 +823,6 @@ pub mod jetbrains_ide {
 
         pub fn rubymine() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(RubyMine)
-        }
-
-        fn get_simplified_version(version: YearSemVer) -> String {
-            match version {
-                YearSemVer(year, major, 0) => format!("{year}.{major}"),
-                _ => version.to_string()
-            }
         }
     }
 

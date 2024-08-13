@@ -196,11 +196,21 @@ impl<'de> Deserialize<'de> for SemVerVendor {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub struct YearSemVer(pub u16, pub u8, pub u8);
+pub struct YearSemVer(pub u16, pub u8, pub u8, pub u8);
+
+impl YearSemVer {
+    pub fn to_simplified_string(&self) -> String {
+        match self {
+            YearSemVer(year, major, minor, 0) if minor > &0 => format!("{year}.{major}.{minor}"),
+            YearSemVer(year, major, 0, 0) => format!("{year}.{major}"),
+            _ => self.to_string()
+        }
+    }
+}
 
 impl Display for YearSemVer {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}.{}", self.0, self.1, self.2)
+        write!(f, "{}.{}.{}.{}", self.0, self.1, self.2, self.3)
     }
 }
 
@@ -212,15 +222,26 @@ impl FromStr for YearSemVer {
 
         let parts: Vec<&str> = s.split('.').collect();
 
-        if parts.len() != 3 {
-            return Err(InvalidDigit(format!("String {} must have 3 digits but has {}", s, parts.len())));
-        }
+        let len = parts.len();
 
-        let major = parts[0].parse::<u16>().map_err(parse_to_version_error)?;
-        let minor = parts[1].parse::<u8>().map_err(parse_to_version_error)?;
-        let patch = parts[2].parse::<u8>().map_err(parse_to_version_error)?;
+        match len {
+            2 | 3 | 4 => Ok(()),
+            _ => Err(InvalidDigit(format!("String {} must have either 4, 3, or 2 digits but has {}.", s, parts.len()))),
+        }?;
 
-        Ok(YearSemVer(major, minor, patch))
+        let get_optional_digit = |idx: usize|
+            if idx < len {
+                parts[idx].parse::<u8>().map_err(parse_to_version_error)
+            } else {
+                Ok(0)
+            };
+
+        let year = parts[0].parse::<u16>().map_err(parse_to_version_error)?;
+        let major = parts[1].parse::<u8>().map_err(parse_to_version_error)?;
+        let minor = get_optional_digit(2)?;
+        let patch = get_optional_digit(3)?;
+
+        Ok(YearSemVer(year, major, minor, patch))
     }
 }
 
@@ -236,7 +257,7 @@ impl<'de> Visitor<'de> for YearSemVerVisitor {
     type Value = YearSemVer;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
-        formatter.write_str("a version string in the format x.y.z")
+        formatter.write_str("a version string in the format YYYY.x.y.z")
     }
 
     fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
@@ -398,10 +419,38 @@ mod tests {
 
     #[test]
     fn year_semver_from_str() {
+        let sem_ver_str = "2024.2.3.1";
+        let sem_ver = YearSemVer::from_str(sem_ver_str).unwrap();
+
+        assert_eq!(sem_ver, YearSemVer(2024, 2, 3, 1));
+    }
+
+    #[test]
+    fn year_semver_simplified_from_str() {
         let sem_ver_str = "2024.2.3";
         let sem_ver = YearSemVer::from_str(sem_ver_str).unwrap();
 
-        assert_eq!(sem_ver, YearSemVer(2024, 2, 3));
+        assert_eq!(sem_ver, YearSemVer(2024, 2, 3, 0));
+
+        let sem_ver_str = "2024.2";
+        let sem_ver = YearSemVer::from_str(sem_ver_str).unwrap();
+
+        assert_eq!(sem_ver, YearSemVer(2024, 2, 0, 0));
+    }
+
+    #[test]
+    fn year_semver_simplified_string() {
+        let sem_ver = YearSemVer(2024, 1, 2, 4);
+
+        assert_eq!("2024.1.2.4", sem_ver.to_simplified_string());
+
+        let sem_ver = YearSemVer(2024, 1, 2, 0);
+
+        assert_eq!("2024.1.2", sem_ver.to_simplified_string());
+
+        let sem_ver = YearSemVer(2024, 1, 0, 0);
+
+        assert_eq!("2024.1", sem_ver.to_simplified_string());
     }
 
     #[test]
