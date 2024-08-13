@@ -664,7 +664,7 @@ pub mod jetbrains_ide {
         hash_sha256: String,
     }
 
-    pub struct JetBrainsIdeImage(DesktopImage, YearSemVer);
+    pub struct JetBrainsIdeImage(DesktopImage);
 
     impl JetBrainsIdeImage {
         fn new_fetch_url(
@@ -699,7 +699,7 @@ pub mod jetbrains_ide {
                         Url::parse(&format!("https://www.jetbrains.com/{did}/download")).unwrap(),
                         DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
                     ),
-                ), version)
+                ))
             }
         }
 
@@ -712,10 +712,6 @@ pub mod jetbrains_ide {
                 YearSemVer(year, major, 0) => format!("{year}.{major}"),
                 _ => version.to_string()
             }
-        }
-
-        fn simplified_version(&self) -> String {
-            Self::get_simplified_version(self.1.clone())
         }
     }
 
@@ -754,11 +750,13 @@ pub mod jetbrains_ide {
                 .join(toolbox_rel_dir.clone())
                 .join("apps");
 
+            let tar_file = tar_file.to_str().unwrap();
+
             let output = exec_cmd(
                 "tar",
                 &[
                     "-xf",
-                    tar_file.to_str().unwrap(),
+                    tar_file,
                     "--directory",
                     tmp_path.to_str().unwrap(),
                 ],
@@ -766,11 +764,11 @@ pub mod jetbrains_ide {
 
             cmd::print_output(output);
 
+            let extracted_dir_name = get_tar_root_dir_name(tar_file)?;
+
             println!("Moving {ide_name} files...");
 
             let ide_id = self.0.id();
-            let version = self.simplified_version();
-            let extracted_dir_name = format!("{ide_id}-{version}");
             let extracted_dir_rel_path = Path::new(&extracted_dir_name);
             let ide_tmp_dir = tmp_path.join(extracted_dir_rel_path);
             let ide_dir = apps_dir.join(ide_id.to_string());
@@ -825,4 +823,14 @@ pub mod jetbrains_ide {
     }
 
     impl ImageOps for JetBrainsIdeImage { image_ops_impl!(); }
+
+    fn get_tar_root_dir_name(tar_file: &str) -> Result<String, String> {
+        let tar_cmd = format!("tar -tf {tar_file} | grep -o '^[^/]*' | sort -u | head -n 1");
+        let output = exec_cmd("bash", &["-c", &tar_cmd])
+            .map_err(|error| format!("Fail to read root directory of compressed file {tar_file}: {error}"))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        Ok(stdout.trim().to_string())
+    }
 }
