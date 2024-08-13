@@ -6,7 +6,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::{CLion, DataGrip, Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, Rider, VsCode};
+use DesktopImageId::{CLion, DataGrip, Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, Rider, RustRover, VsCode};
 
 use crate::image::desktop::DesktopImageId::{PhpStorm, RubyMine, WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
@@ -20,6 +20,7 @@ pub enum DesktopImageId {
     JetBrainsToolbox,
     IntelliJIdea,
     WebStorm,
+    RustRover,
     CLion,
     PyCharm,
     DataGrip,
@@ -37,6 +38,7 @@ impl Display for DesktopImageId {
             JetBrainsToolbox => "jetbrains-toolbox",
             IntelliJIdea => "intellij-idea",
             WebStorm => "webstorm",
+            RustRover => "rustrover",
             CLion => "clion",
             PyCharm => "pycharm",
             DataGrip => "datagrip",
@@ -58,6 +60,7 @@ impl StrFind for DesktopImageId {
             "jetbrains-toolbox" => Some(JetBrainsToolbox),
             "intellij-idea" => Some(IntelliJIdea),
             "webstorm" => Some(WebStorm),
+            "rustrover" => Some(RustRover),
             "clion" => Some(CLion),
             "pycharm" => Some(PyCharm),
             "datagrip" => Some(DataGrip),
@@ -673,12 +676,13 @@ pub mod jetbrains_ide {
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
     use std::{env, fs};
-    use JetBrainsIdeImageId::{CLion, DataGrip, Goland, IntelliJIdea, PhpStorm, Rider, RubyMine};
+    use JetBrainsIdeImageId::{CLion, DataGrip, Goland, IntelliJIdea, PhpStorm, Rider, RubyMine, RustRover};
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
         IntelliJIdea,
         WebStorm,
+        RustRover,
         CLion,
         PyCharm,
         DataGrip,
@@ -693,6 +697,7 @@ pub mod jetbrains_ide {
             match self {
                 IntelliJIdea => DesktopImageId::IntelliJIdea,
                 WebStorm => DesktopImageId::WebStorm,
+                RustRover => DesktopImageId::RustRover,
                 CLion => DesktopImageId::CLion,
                 PyCharm => DesktopImageId::PyCharm,
                 DataGrip => DesktopImageId::DataGrip,
@@ -714,6 +719,7 @@ pub mod jetbrains_ide {
             match self {
                 IntelliJIdea => "IntelliJ IDEA",
                 WebStorm => "WebStorm",
+                RustRover => "RustRover",
                 CLion => "CLion",
                 PyCharm => "PyCharm",
                 DataGrip => "DataGrip",
@@ -748,6 +754,7 @@ pub mod jetbrains_ide {
             match id {
                 IntelliJIdea => format!("{base_url}/idea/ideaIU-{file_ext}"),
                 WebStorm => format!("{base_url}/webstorm/WebStorm-{file_ext}"),
+                RustRover => format!("{base_url}/rustrover/RustRover-{file_ext}"),
                 CLion => format!("{base_url}/cpp/CLion-{file_ext}"),
                 PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}"),
                 DataGrip => format!("{base_url}/datagrip/datagrip-{file_ext}"),
@@ -784,6 +791,10 @@ pub mod jetbrains_ide {
 
         pub fn webstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(WebStorm)
+        }
+
+        pub fn rustrover() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(RustRover)
         }
 
         pub fn clion() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
