@@ -919,7 +919,7 @@ pub mod jetbrains_ide {
 
             println!("Removing {ide_name} files...");
 
-            let ide_id = self.0.id();
+            let ide_id = self.0.package().name;
             let ide_dir = toolbox_dir
                 .join("apps")
                 .join(ide_id.to_string());
