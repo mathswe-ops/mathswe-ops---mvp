@@ -6,7 +6,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::{JetBrainsToolbox, PyCharm, VsCode};
+use DesktopImageId::{IntelliJIdea, JetBrainsToolbox, PyCharm, VsCode};
 
 use crate::image::desktop::DesktopImageId::{WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
@@ -18,6 +18,7 @@ pub enum DesktopImageId {
     Zoom,
     VsCode,
     JetBrainsToolbox,
+    IntelliJIdea,
     WebStorm,
     PyCharm,
 }
@@ -28,6 +29,7 @@ impl Display for DesktopImageId {
             Zoom => "zoom",
             VsCode => "vscode",
             JetBrainsToolbox => "jetbrains-toolbox",
+            IntelliJIdea => "intellij-idea",
             WebStorm => "webstorm",
             PyCharm => "pycharm",
         };
@@ -42,6 +44,7 @@ impl StrFind for DesktopImageId {
             "zoom" => Some(Zoom),
             "vscode" => Some(VsCode),
             "jetbrains-toolbox" => Some(JetBrainsToolbox),
+            "intellij-idea" => Some(IntelliJIdea),
             "webstorm" => Some(WebStorm),
             "pycharm" => Some(PyCharm),
             _ => None
@@ -641,9 +644,11 @@ pub mod jetbrains_ide {
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
     use std::{env, fs};
+    use JetBrainsIdeImageId::IntelliJIdea;
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
+        IntelliJIdea,
         WebStorm,
         PyCharm,
     }
@@ -651,13 +656,22 @@ pub mod jetbrains_ide {
     impl JetBrainsIdeImageId {
         pub fn to_desktop_image_id(&self) -> DesktopImageId {
             match self {
+                IntelliJIdea => DesktopImageId::IntelliJIdea,
                 WebStorm => DesktopImageId::WebStorm,
                 PyCharm => DesktopImageId::PyCharm,
             }
         }
 
+        pub fn pkg_name(&self) -> String {
+            match self {
+                IntelliJIdea => "idea".to_string(),
+                _ => self.to_desktop_image_id().to_string()
+            }
+        }
+
         pub fn name(&self) -> &str {
             match self {
+                IntelliJIdea => "IntelliJ IDEA",
                 WebStorm => "WebStorm",
                 PyCharm => "PyCharm",
             }
@@ -685,6 +699,7 @@ pub mod jetbrains_ide {
             };
 
             match id {
+                IntelliJIdea => format!("{base_url}/idea/ideaIU-{file_ext}"),
                 WebStorm => format!("{base_url}/webstorm/WebStorm-{file_ext}"),
                 PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}"),
             }
@@ -693,7 +708,7 @@ pub mod jetbrains_ide {
         pub fn new(id: JetBrainsIdeImageId) -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             move |os: Os, JetBrainsIdeInfo { version, hash_sha256 }: JetBrainsIdeInfo| {
                 let did = id.to_desktop_image_id();
-                let pkg_name = did.to_string();
+                let pkg_name = id.pkg_name();
                 let fetch_url = Self::new_fetch_url(os.clone(), id.clone(), version.clone());
                 let hash = Hash::new(Sha256, hash_sha256);
 
@@ -708,6 +723,10 @@ pub mod jetbrains_ide {
                     ),
                 ))
             }
+        }
+
+        pub fn intellij_idea() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(IntelliJIdea)
         }
 
         pub fn webstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
@@ -779,10 +798,10 @@ pub mod jetbrains_ide {
 
             println!("Moving {ide_name} files...");
 
-            let ide_id = self.0.id();
+            let ide_id = self.0.package().name;
             let extracted_dir_rel_path = Path::new(&extracted_dir_name);
             let ide_tmp_dir = tmp_path.join(extracted_dir_rel_path);
-            let ide_dir = apps_dir.join(ide_id.to_string());
+            let ide_dir = apps_dir.join(ide_id);
 
             fs::rename(ide_tmp_dir.clone(), ide_dir.clone())
                 .map_err(|error| format!("Fail to move {:?} to {:?}: {}", ide_tmp_dir, ide_dir, error))?;

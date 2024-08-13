@@ -4,7 +4,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use DesktopImageId::{JetBrainsToolbox, PyCharm, VsCode, WebStorm};
+use DesktopImageId::{IntelliJIdea, JetBrainsToolbox, PyCharm, VsCode, WebStorm};
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
@@ -49,6 +49,7 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
             Zoom => ctx.load(ZoomImage::new)?,
             VsCode => ctx.load(VsCodeImage::new)?,
             JetBrainsToolbox => ctx.load(JetBrainsToolboxImage::new)?,
+            IntelliJIdea => ctx.load(JetBrainsIdeImage::intellij_idea())?,
             WebStorm => ctx.load(JetBrainsIdeImage::webstorm())?,
             PyCharm => ctx.load(JetBrainsIdeImage::pycharm())?,
         };
