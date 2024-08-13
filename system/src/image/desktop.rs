@@ -481,7 +481,18 @@ pub mod jetbrains_toolbox {
         if is_running {
             println!("Killing process {}...", bin_name);
 
-            kill_process_and_wait(os, bin_name, bin_name_prefix)?;
+            let kill_result = kill_process_and_wait(os, bin_name, bin_name_prefix);
+
+            if let Err(error) = kill_result {
+                eprintln!("Fail to kill process {bin_name}.");
+                println!("Opening process {} anyways to attempt restart (async)...", bin_name);
+
+                exec_cmd_async(toolbox_bin.to_str().unwrap(), &[])
+                    .map(|_| ())
+                    .map_err(|error| format!("Fail attempt to execute process {bin_name} after previous fail to kill it: {error}"))?;
+
+                return Err(format!("{error}\n"))
+            }
         }
 
         println!("Opening process {} (async)...", bin_name);
@@ -841,7 +852,11 @@ pub mod jetbrains_ide {
 
             println!("Restarting JetBrains Toolbox to complete the installation...");
 
-            restart_jetbrains_toolbox(self.0.package().os)?;
+            let restart_result = restart_jetbrains_toolbox(self.0.package().os);
+
+            if let Err(error) = restart_result {
+                eprintln!("Unable to restart JetBrains Toolbox. The installation may be incomplete, so you should restart the Toolbox app manually to complete the installation.\nCause: {error}")
+            }
 
             println!("{ide_name} installed.");
 
@@ -877,7 +892,11 @@ pub mod jetbrains_ide {
 
             println!("Restarting JetBrains Toolbox to complete the uninstallation...");
 
-            restart_jetbrains_toolbox(self.0.package().os)?;
+            let restart_result = restart_jetbrains_toolbox(self.0.package().os);
+
+            if let Err(error) = restart_result {
+                eprintln!("Unable to restart JetBrains Toolbox. The installation may be incomplete, so you should restart the Toolbox app manually to complete the installation.\nCause: {error}")
+            }
 
             println!("{ide_name} uninstalled.");
 
