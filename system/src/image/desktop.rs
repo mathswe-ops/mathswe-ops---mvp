@@ -6,7 +6,7 @@ use core::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use DesktopImageId::{Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, Rider, VsCode};
+use DesktopImageId::{CLion, Goland, IntelliJIdea, JetBrainsToolbox, PyCharm, Rider, VsCode};
 
 use crate::image::desktop::DesktopImageId::{PhpStorm, WebStorm, Zoom};
 use crate::image::{Image, ImageId, StrFind, ToImageId};
@@ -20,6 +20,7 @@ pub enum DesktopImageId {
     JetBrainsToolbox,
     IntelliJIdea,
     WebStorm,
+    CLion,
     PyCharm,
     Goland,
     Rider,
@@ -34,6 +35,7 @@ impl Display for DesktopImageId {
             JetBrainsToolbox => "jetbrains-toolbox",
             IntelliJIdea => "intellij-idea",
             WebStorm => "webstorm",
+            CLion => "clion",
             PyCharm => "pycharm",
             Goland => "goland",
             Rider => "rider",
@@ -52,6 +54,7 @@ impl StrFind for DesktopImageId {
             "jetbrains-toolbox" => Some(JetBrainsToolbox),
             "intellij-idea" => Some(IntelliJIdea),
             "webstorm" => Some(WebStorm),
+            "clion" => Some(CLion),
             "pycharm" => Some(PyCharm),
             "goland" => Some(Goland),
             "rider" => Some(Rider),
@@ -664,12 +667,13 @@ pub mod jetbrains_ide {
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
     use std::{env, fs};
-    use JetBrainsIdeImageId::{Goland, IntelliJIdea, PhpStorm, Rider};
+    use JetBrainsIdeImageId::{CLion, Goland, IntelliJIdea, PhpStorm, Rider};
 
     #[derive(Clone)]
     pub enum JetBrainsIdeImageId {
         IntelliJIdea,
         WebStorm,
+        CLion,
         PyCharm,
         Goland,
         Rider,
@@ -681,6 +685,7 @@ pub mod jetbrains_ide {
             match self {
                 IntelliJIdea => DesktopImageId::IntelliJIdea,
                 WebStorm => DesktopImageId::WebStorm,
+                CLion => DesktopImageId::CLion,
                 PyCharm => DesktopImageId::PyCharm,
                 Goland => DesktopImageId::Goland,
                 Rider => DesktopImageId::Rider,
@@ -699,6 +704,7 @@ pub mod jetbrains_ide {
             match self {
                 IntelliJIdea => "IntelliJ IDEA",
                 WebStorm => "WebStorm",
+                CLion => "CLion",
                 PyCharm => "PyCharm",
                 Goland => "GoLand",
                 Rider => "Rider",
@@ -730,6 +736,7 @@ pub mod jetbrains_ide {
             match id {
                 IntelliJIdea => format!("{base_url}/idea/ideaIU-{file_ext}"),
                 WebStorm => format!("{base_url}/webstorm/WebStorm-{file_ext}"),
+                CLion => format!("{base_url}/cpp/CLion-{file_ext}"),
                 PyCharm => format!("{base_url}/python/pycharm-professional-{file_ext}"),
                 Goland => format!("{base_url}/go/goland-{file_ext}"),
                 Rider => format!("{base_url}/rider/JetBrains.Rider-{file_ext}"),
@@ -763,6 +770,10 @@ pub mod jetbrains_ide {
 
         pub fn webstorm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
             Self::new(WebStorm)
+        }
+
+        pub fn clion() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
+            Self::new(CLion)
         }
 
         pub fn pycharm() -> impl Fn(Os, JetBrainsIdeInfo) -> JetBrainsIdeImage {
