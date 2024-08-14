@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Rust, Sdkman};
+use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -19,6 +19,9 @@ pub enum ServerImageId {
     Sdkman,
     Java,
     Gradle,
+    Nvm,
+    Node,
+    Miniconda,
 }
 
 impl Display for ServerImageId {
@@ -29,6 +32,9 @@ impl Display for ServerImageId {
             Sdkman => "sdkman",
             Java => "java",
             Gradle => "gradle",
+            Nvm => "nvm",
+            Node => "node",
+            Miniconda => "miniconda",
         };
 
         write!(f, "{}", msg)
@@ -43,6 +49,9 @@ impl StrFind for ServerImageId {
             "sdkman" => Some(Sdkman),
             "java" => Some(Java),
             "gradle" => Some(Gradle),
+            "nvm" => Some(Nvm),
+            "node" => Some(Node),
+            "miniconda" => Some(Miniconda),
             _ => None
         }
     }
@@ -573,4 +582,371 @@ pub mod gradle {
     }
 
     impl ImageOps for GradleImage { image_ops_impl!(); }
+}
+
+pub mod nvm {
+    use std::{env, fs};
+    use std::path::Path;
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Nvm;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NvmInfo {
+        version: SemVer,
+    }
+
+    pub struct NvmImage(ServerImage);
+
+    impl NvmImage {
+        pub fn new(os: Os, NvmInfo { version }: NvmInfo) -> Self {
+            let id = Nvm;
+            let pkg_id = id.to_string();
+            let fetch_url = format!("https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", version);
+
+            NvmImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        &pkg_id.as_str(),
+                        os,
+                        Software::new("nvm.sh", "NVM (Node Version Manager)", &version.to_string()),
+                        Url::parse("https://github.com/nvm-sh/nvm").unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for NvmImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Fetching and installing NVM.");
+
+            let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf -o- {} | bash", self.0.package().fetch.url());
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NvmImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let nvm_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join(".nvm"))
+                .map_err(|output| output.to_string())?;
+
+            println!("Unloading NVM...");
+
+            let nvm_cmd = "source ~/.nvm/nvm.sh && nvm unload";
+
+            let output = exec_cmd("bash", &["-c", nvm_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Deleting NVM files...");
+
+            fs::remove_dir_all(nvm_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Removing environment variables...");
+
+            // It deletes the lines from ~/.bashrc
+            // export NVM_DIR="$HOME/.nvm"
+            // [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+            // [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+            let prof = env::var("HOME")
+                .map(|home| Path::new(&home).join(".bashrc"))
+                .map_err(|output| output.to_string())?;
+
+            let clean_profile_pattern = r#"
+                /export NVM_DIR="\$HOME\/.nvm"/d;
+                /\[ -s "\$NVM_DIR\/nvm.sh" \] && \\. "\$NVM_DIR\/nvm.sh"/d;
+                /\[ -s "\$NVM_DIR\/bash_completion" \] && \\. "\$NVM_DIR\/bash_completion"/d
+            "#.trim();
+
+            let output = exec_cmd("sed", &["-i", clean_profile_pattern, prof.to_str().unwrap()])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NvmImage { image_ops_impl!(); }
+}
+
+pub mod node {
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image::Image;
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Node;
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NodeInfo {
+        version: SemVer, // TODO supports latest version too
+    }
+
+    pub struct NodeImage(ServerImage);
+
+    impl NodeImage {
+        pub fn new(os: Os, NodeInfo { version }: NodeInfo) -> Self {
+            let id = Node;
+            let pkg_name = id.to_string();
+
+            NodeImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("OpenJS Foundation", "Node.js", &version.to_string()),
+                    Url::parse("https://nodejs.org/en").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for NodeImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Node via NVM.");
+
+            let nvm_cmd = format!("nvm install {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node installed");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NodeImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Node via NVM.");
+
+            let nvm_cmd = format!("nvm uninstall {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node uninstalled");
+
+            // TODO Consider fail: Cannot uninstall currently-active node version
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NodeImage { image_ops_impl!(); }
+}
+
+pub mod miniconda {
+    use std::{env, fs};
+    use std::path::Path;
+    use std::process::Output;
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use Os::Linux;
+
+    use crate::{cmd, image_ops_impl};
+    use crate::cmd::exec_cmd;
+    use crate::download::{Downloader, DownloadRequest, Integrity};
+    use crate::download::hashing::Hash;
+    use crate::download::hashing::HashAlgorithm::Sha256;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Miniconda;
+    use crate::os::Os;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, SemVer, Software};
+    use crate::tmp::TmpWorkingDir;
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct MinicondaInfo {
+        version: SemVer,
+        hash_sha256: String,
+        python_version: SemVer,
+    }
+
+    impl MinicondaInfo {
+        fn url_version(&self) -> String {
+            let SemVer(py_major, py_minor, _) = self.clone().python_version;
+            let py_ver = format!("py{py_major}{py_minor}");
+            let conda_ver = self.clone().version;
+
+            format!("{py_ver}_{conda_ver}")
+        }
+    }
+
+    pub struct MinicondaImage(ServerImage);
+
+    impl MinicondaImage {
+        pub fn new(os: Os, info: MinicondaInfo) -> Self {
+            let MinicondaInfo { version, hash_sha256, .. } = info.clone();
+            let id = Miniconda;
+            let pkg_id = "conda";
+            let url_version = info.url_version();
+            let fetch_url = match os {
+                Linux(X64, _) => format!("https://repo.anaconda.com/miniconda/Miniconda3-{url_version}-0-Linux-x86_64.sh")
+            };
+            let hash = Hash::new(Sha256, hash_sha256);
+
+            MinicondaImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        pkg_id,
+                        os,
+                        Software::new("Anaconda, Inc", "Miniconda", &version.to_string()),
+                        Url::parse("https://docs.anaconda.com/miniconda/miniconda-install").unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for MinicondaImage {
+        fn install(&self) -> Result<(), String> {
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let package = self.0.package();
+            let downloader = Downloader::from(package.fetch.clone(), &tmp);
+            let installer_file = downloader.path.clone();
+
+            println!("Downloading Miniconda installer...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())?;
+
+            println!("Installing Miniconda...");
+
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+            let output = exec_cmd(
+                "bash",
+                &[
+                    installer_file.to_str().unwrap(),
+                    "-b",
+                    "-u",
+                    "-p",
+                    miniconda_dir.to_str().unwrap()
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            println!("Miniconda installed.");
+
+            println!("Initializing miniconda.");
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "bash"],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "zsh"],
+            ).map_err(|error| error.to_string())?;
+
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+            println!("Miniconda installed and initialized.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for MinicondaImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+            let print_optional_step = |output: cmd::Result<Output>| match output {
+                Ok(o) => {
+                    println!("stdout: {}", String::from_utf8_lossy(&o.stdout));
+                    println!("stderr: {}", String::from_utf8_lossy(&o.stderr));
+                }
+                Err(error) => {
+                    eprintln!("Fail to remove conda initialization scripts (optional step): {}", error);
+                }
+            };
+
+            println!("Removing conda initialization scripts (optional step)...");
+
+            let output = exec_cmd(
+                "conda",
+                &["init", "--reverse", "--all"],
+            );
+
+            print_optional_step(output);
+
+            println!("Removing Miniconda files...");
+
+            fs::remove_dir_all(miniconda_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Miniconda uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for MinicondaImage { image_ops_impl!(); }
 }

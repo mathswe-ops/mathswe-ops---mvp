@@ -155,14 +155,14 @@ impl ImageLoadContext {
     fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
         os: Os,
         info: D,
-        cons: fn(Os, D) -> T
+        cons: impl Fn(Os, D) -> T
     ) -> Box<dyn ImageOps> {
         Box::new(cons(os, info))
     }
 
     pub fn load<D: DeserializeOwned, T: ImageOps + 'static>(
         &self,
-        cons: fn(Os, D) -> T,
+        cons: impl Fn(Os, D) -> T,
     ) -> Result<Box<dyn ImageOps>, ImageInfoError> {
         let info = self.info_loader.load()?;
         let image = Self::image_from(self.os.clone(), info, cons);
