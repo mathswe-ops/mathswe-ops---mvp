@@ -3,3 +3,7 @@
 <!-- This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp -->
 
 # System
+
+The System CLI application is a part of the MathSwe Ops MVP to automate software
+operations in Linux, such as installation, uninstallation, and configuration,
+allowing you to set up server VMs and desktop Workstations by running a command.
