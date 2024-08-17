@@ -33,6 +33,40 @@ that makes cloud VMs and desktop work machines productive from cold OS
 installation. It automates cold-start DevOps and staff onboarding as per your
 organization's standards.
 
+## Available Images
+
+The list of currently supported images is next.
+
+`Available Server Images`
+
+- Rust
+- Go
+- Sdkman
+- Java
+- Gradle
+- Nvm
+- Node
+- Miniconda
+
+`Available Desktop Images`
+
+- Zoom
+- VsCode
+- JetBrainsToolbox
+
+`Available JetBrainsIde Images`
+
+- IntelliJIdea
+- WebStorm
+- RustRover
+- CLion
+- PyCharm
+- DataGrip
+- Goland
+- Rider
+- PhpStorm
+- RubyMine
+
 ## OS Compatibility
 
 The System MVP app is designed and tested for **Ubuntu** and should work for
