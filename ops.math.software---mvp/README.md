@@ -1,50 +1,48 @@
-# React + TypeScript + Vite
+<!-- Copyright (c) 2024 Tobias Briones. All rights reserved. -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp -->
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# MVP: Math.Software
 
-Currently, two official plugins are available:
+[![Project](public/mathswe-ops-mvp-app-badge.svg)](https://ops.math.software)
+&nbsp;
+[![GitHub Repository](https://img.shields.io/static/v1?label=GITHUB&message=REPOSITORY&labelColor=555&color=0277bd&style=for-the-badge&logo=GITHUB)](https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/ops.math.software---mvp)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[![GitHub Project License](https://img.shields.io/github/license/mathswe-ops/mathswe-ops---mvp.svg?style=flat-square)](https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/LICENSE)
 
-## Expanding the ESLint configuration
+![GitHub Release](public/mathswe-ops-mvp-app-release-badge.svg)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+⚙ Production
+[![Netlify Status](https://api.netlify.com/api/v1/badges/c168cb61-af0d-49f9-a62d-57b13f35577e/deploy-status)](https://app.netlify.com/sites/mathswe-ops/deploys)
 
-- Configure the top-level `parserOptions` property like this:
+MVP (Minimum Viable Project) of the **MathSwe Ops** web app that aims to
+automate the development and deployment of mathematical software with SWAM
+(Special Software and Models) operations.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Getting Started
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Install project dependencies via `npm install`.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+Run development mode via `npm run dev`.
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+Build for production via `npm run build`.
+
+Run ESLint via `npx eslint .`.
+
+## Contact
+
+Tobias Briones: [GitHub](https://github.com/tobiasbriones)
+[LinkedIn](https://linkedin.com/in/tobiasbriones)
+
+## About
+
+**MVP: MathSwe Ops**
+
+MVP (Minimum Viable Project) of the **MathSwe Ops** web app.
+
+Copyright © 2024 Tobias Briones. All rights reserved.
+
+### License
+
+This project is licensed under the
+[GNU General Public License v3.0 or later License](../LICENSE).
