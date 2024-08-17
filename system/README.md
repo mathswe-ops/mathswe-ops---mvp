@@ -51,6 +51,19 @@ example, `Rust => rust`, `JetBrainsToolbox => jetbrains-toolbox`, etc.
 Images provide type-safe software models, and the System app user will need
 their IDs to execute the operations the app implements for these images.
 
+### Image Installation
+
+The operation `Install` loads the given images from the program repository and
+executes the software installation in the host OS.
+
+*Syntax:* `system install { image_1, image_2, ..., image_n }`.
+
+Make sure to install in the correct order if they are dependencies since the MVP
+won't implement checking the OS state before operating for each ad-hoc image.
+
+You can add one or many images, and the program will install them one after
+another.
+
 ## Available Images
 
 The list of currently supported images is next.
