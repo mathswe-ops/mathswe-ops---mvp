@@ -154,6 +154,15 @@ System app supports both `Sha256` hash and `Gpg` verification.
 Most image information files consist of the software version and integrity data
 from the vendor site to perform a secure download.
 
+## Automated Operations with Super User Requirements
+
+While the System app automates software operations, it's crucial to recall that
+*your terminal* will ask for your `sudo` password when required. It's
+unnecessary and discouraged to run the app with `sudo` privileges.
+
+So, the only manual interaction you can expect when using the app is to enter
+your `sudo` password to your terminal, if required.
+
 ## Available Images
 
 The list of currently supported images is next.
