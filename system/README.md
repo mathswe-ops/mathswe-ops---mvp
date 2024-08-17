@@ -84,6 +84,38 @@ The composed operation `reinstall` will apply the procedural operations
 You can add one or many images, and the program will reinstall them one after
 another.
 
+## Serializable Image Information
+
+While image models with sensitive values that don't change, like URL domain
+names to fetch installers, are secure within Rust's type system, there are data,
+like versions, that change and can be safely maintained separately from the
+program boundaries.
+
+Serializable information needs special maintenance since it changes frequently
+and must not pose security gaps. It is secured thanks to Rust's type system.
+
+For example, if a software version is `SemVer`, and this value goes to the URL
+path, the program will ensure the deserialized value is a `SemVer`
+type rather than a random string. Moreover, invariants such as domain name,
+using the `HTTPS` protocol, etc., are engineered into the System app domain;
+thus, volatile serializable data can't affect these protocols and standards.
+
+The current serialization format is `JSON` and image information go to the
+`images/` root directory of the app.
+
+When you provide routine maintenance to the app repository, like updating
+software versions, PRs will affect the `images/` directory rather than the
+application source code, making it relatively scalable since its initial
+release, MVP `v0.1.0`.
+
+To find technical details about images, like data types, the modules
+`image::server` and `image::desktop` contain their implementations.
+
+The serializable part of an image is the one volatile with minimized control,
+where the System app ensures type safety for this boundary. It allows us more
+scalability and maintenance, while the app currently supports the format JSON in
+its `images/` directory.
+
 ## Available Images
 
 The list of currently supported images is next.
