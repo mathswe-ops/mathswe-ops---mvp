@@ -116,6 +116,44 @@ where the System app ensures type safety for this boundary. It allows us more
 scalability and maintenance, while the app currently supports the format JSON in
 its `images/` directory.
 
+### Serialization Examples
+
+Image information will be similar many times, so here are some examples to give
+an idea of what they look like.
+
+`Image Serialization of IntelliJIdea JetBrainsIdeImage`
+
+```json
+{
+  "version": "2024.2.0.1",
+  "hash_sha256": "293fa50d4cbae4da55526b72c19650eca26efc8ef3a7107fed2371b70b812d6f"
+}
+```
+
+You can check the version type, in this case, `YearSemVer`, in the
+[corresponding image module](#serializable-image-information) and the `package`
+module.
+
+Integrity checks are mandatory when the vendor provides them. Do not forget to
+**update the hash value when updating the version** (you get this on the vendor
+site), or the download will fail the integrity check.
+
+`Image Serialization of ZoomImage`
+
+```json
+{
+  "version": "6.1.1.443",
+  "public_key_version": "5-12-6",
+  "key_fingerprint": "59C8 6188 E22A BB19 BD55 4047 7B04 A1B8 DD79 B481"
+}
+```
+
+Zoom is a bit peculiar since it requires `Gpg` to verify the file integrity. The
+System app supports both `Sha256` hash and `Gpg` verification.
+
+Most image information files consist of the software version and integrity data
+from the vendor site to perform a secure download.
+
 ## Available Images
 
 The list of currently supported images is next.
