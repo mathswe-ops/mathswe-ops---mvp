@@ -64,6 +64,16 @@ won't implement checking the OS state before operating for each ad-hoc image.
 You can add one or many images, and the program will install them one after
 another.
 
+### Image Uninstallation
+
+The operation `Uninstall` loads the given images from the program repository and
+executes the software uninstallation in the host OS.
+
+*Syntax:* `system install { image_1, image_2, ..., image_n }`.
+
+You can add one or many images, and the program will uninstall them one after
+another.
+
 ## Available Images
 
 The list of currently supported images is next.
