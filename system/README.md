@@ -74,6 +74,16 @@ executes the software uninstallation in the host OS.
 You can add one or many images, and the program will uninstall them one after
 another.
 
+### Image Re-Installation
+
+The composed operation `reinstall` will apply the procedural operations
+`Uninstall` and then `Install` to reinstall the software.
+
+*Syntax:* `system reinstall { image_1, image_2, ..., image_n }`.
+
+You can add one or many images, and the program will reinstall them one after
+another.
+
 ## Available Images
 
 The list of currently supported images is next.
