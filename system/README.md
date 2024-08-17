@@ -33,6 +33,24 @@ that makes cloud VMs and desktop work machines productive from cold OS
 installation. It automates cold-start DevOps and staff onboarding as per your
 organization's standards.
 
+## Image Ops
+
+An image is a model of a software package with OS operations to install,
+uninstall, or reinstall it.
+
+The System app currently implements two major kinds of images, namely, server
+and desktop.
+
+While server images are software that works on any machine, including desktop
+ones, desktop images only work with a machine with GUI and are intended for
+Workstation machines.
+
+An image ID is the lowercase and hyphen-separated value of its enum variant, for
+example, `Rust => rust`, `JetBrainsToolbox => jetbrains-toolbox`, etc.
+
+Images provide type-safe software models, and the System app user will need
+their IDs to execute the operations the app implements for these images.
+
 ## Available Images
 
 The list of currently supported images is next.
