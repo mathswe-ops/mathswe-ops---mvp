@@ -16,6 +16,16 @@ MVP (Minimum Viable Project) of the **MathSwe Ops** organization aims to
 automate the development and deployment of mathematical software with SWAM
 (Special Software and Models) operations.
 
+## MVP: System
+
+[![Project](system/public/mathswe-ops-mvp-badge.svg)](https://ops.math.software)
+&nbsp;
+![GitHub Release](system/public/system-mvp-app-release-badge.svg)
+
+MVP of the **MathSwe System Ops** CLI app.
+
+Project Root: [./system](system).
+
 ## Contact
 
 Tobias Briones: [GitHub](https://github.com/tobiasbriones)
