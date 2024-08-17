@@ -33,6 +33,20 @@ that makes cloud VMs and desktop work machines productive from cold OS
 installation. It automates cold-start DevOps and staff onboarding as per your
 organization's standards.
 
+## OS Compatibility
+
+The System MVP app is designed and tested for **Ubuntu** and should work for
+many other distros, although it may not work and is not necessarily intended to
+work on non-Debian distros.
+
+The MVP *will not officially support other Linux distros*; only the
+engineering-grade version will.
+
+Support for closed-source OSs like Windows is *discouraged* and *incompatible*
+with the engineering-grade version. Software with engineering grade must be
+thoroughly open source to comply with the "public service" engineering standard,
+just like science works with open development.
+
 ## About
 
 **System | MathSwe Ops MVP**
