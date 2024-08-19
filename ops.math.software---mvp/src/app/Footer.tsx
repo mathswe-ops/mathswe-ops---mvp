@@ -13,7 +13,7 @@ function Footer() {
             <div className="nav row">
                 <section className="col-6">
                     <h5>
-                        MathSwe Ops
+                        Math Software
                     </h5>
                     <ul>
                         <li>
@@ -78,7 +78,7 @@ function Footer() {
                         Legal
                     </h5>
 
-                    <h6>MVP: MathSwe Ops</h6>
+                    <h6>MVP: MathSwe Ops, Web</h6>
 
                     <p>
                         Copyright © 2024 Tobias Briones. All rights reserved.
@@ -89,7 +89,11 @@ function Footer() {
                             <b>Web App</b>
                             &nbsp;
                             licensed under the&nbsp;
-                            <a href="https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/LICENSE">
+                            <a
+                                href="https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/LICENSE"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
                                 GNU General Public License v3.0 or later License
                             </a>
                             .
