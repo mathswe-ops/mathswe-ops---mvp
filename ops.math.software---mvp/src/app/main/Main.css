@@ -7,13 +7,14 @@ main > article > section {
     flex-direction: column;
 }
 
-main section > .wrap {
-    padding: var(--content-padding);
-    padding-top: 0;
+main section > .wrap,
+main section > .bg > .wrap {
+    padding: 0 var(--content-padding);
 }
 
 main section .wrap > a > h2,
-main section .wrap > a > h3 {
+main section .wrap > a > h3,
+main section .wrap > a > h4 {
     padding: 0.125rem;
     margin-bottom: 0;
     text-align: center;
@@ -28,15 +29,23 @@ main section .wrap > p {
     text-align: center;
 }
 
+header + p,
 .heading + p,
 .subheading + p {
     padding: 1rem;
     font-size: 1.8rem;
     font-family: "Poppins Light", sans-serif;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
 }
 
 @media (min-width: 1200px) {
-    main section > .wrap {
+    main section > .wrap,
+    main section > .bg > .wrap {
         margin: 0 30vw;
     }
 }

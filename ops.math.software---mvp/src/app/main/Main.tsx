@@ -4,18 +4,20 @@
 
 import Header from "@app/main/Header.tsx";
 import "@app/main/Main.css";
-import System from "./system/System.tsx";
+import Ops from "./ops/Ops.tsx";
 
 function Main() {
     return <>
         <section>
             <main>
                 <article>
-                    <section id="math">
+                    <section id="ops">
                         <Header></Header>
+
+                        <p>Mathematical Software Operations</p>
                     </section>
 
-                    <System />
+                    <Ops />
                 </article>
             </main>
         </section>

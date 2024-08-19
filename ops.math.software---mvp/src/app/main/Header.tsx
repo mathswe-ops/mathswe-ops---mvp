@@ -51,8 +51,8 @@ function Header() {
                         >
                             <h1>MathSwe Ops</h1>
                             <img
-                                src="/mathswe-ops.png"
-                                alt="Math"
+                                src="/mathswe-ops.svg"
+                                alt="MathSwe Ops"
                                 className="nav-icon"
                             />
                         </a>

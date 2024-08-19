@@ -10,6 +10,17 @@ interface HeadingProps {
     icon: string;
 }
 
+interface SubHeadingProps {
+    id: string;
+    title: string;
+    icon?: string;
+}
+
+interface SubSubHeadingProps {
+    id: string;
+    title: string;
+}
+
 function getHeadingClass(heading: JSX.Element) {
     const name = heading.type as string;
 
@@ -21,7 +32,7 @@ function getHeadingClass(heading: JSX.Element) {
     }
 }
 
-function HeadingCard(heading: JSX.Element, id: string, icon: string) {
+function HeadingCard(heading: JSX.Element, id: string, icon?: string) {
     const hClass = getHeadingClass(heading);
     const classes = `navbar-brand nav-link flex-fill p-0 ${ hClass }`;
 
@@ -31,11 +42,12 @@ function HeadingCard(heading: JSX.Element, id: string, icon: string) {
             href={ `#${ id }` }
         >
             { heading }
-            <img
-                src={ icon }
-                alt="Math Software"
-                className="nav-icon"
-            />
+            { icon !== undefined &&
+              <img
+                  src={ icon }
+                  alt="Math Software"
+                  className="nav-icon"
+              /> }
         </a>
     </>;
 }
@@ -44,6 +56,10 @@ export function Heading({ id, title, icon }: HeadingProps) {
     return HeadingCard(<h2>{ title }</h2>, id, icon);
 }
 
-export function SubHeading({ id, title, icon }: HeadingProps) {
+export function SubHeading({ id, title, icon }: SubHeadingProps) {
     return HeadingCard(<h3>{ title }</h3>, id, icon);
+}
+
+export function SubSubHeading({ id, title }: SubSubHeadingProps) {
+    return HeadingCard(<h4>{ title }</h4>, id);
 }

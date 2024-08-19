@@ -3,7 +3,6 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 import ReactDOM from "react-dom/client";
-import "./index.css";
 import App from "@app/App.tsx";
 import "@app/assets/msw-engineer.css";
 import MathJaxContext from "better-react-mathjax/MathJaxContext";
