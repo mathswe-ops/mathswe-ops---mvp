@@ -49,10 +49,10 @@ function Header() {
                             className="navbar-brand nav-link flex-fill p-0"
                             href="/"
                         >
-                            <h1>MathSwe Ops</h1>
+                            <h1>MSW Ops</h1>
                             <img
-                                src="/mathswe-ops.svg"
-                                alt="MathSwe Ops"
+                                src="/msw-ops.svg"
+                                alt="MSW Ops"
                                 className="nav-icon"
                             />
                         </a>

@@ -11,32 +11,38 @@ function Ops() {
         <section className="swam">
             <div className="wrap">
                 <Heading
-                    id="special-ops"
-                    title="Special Ops"
+                    id="swam"
+                    title="SWAM"
                     icon={ specialIcon }
                 ></Heading>
 
                 <p>Special Software and Models</p>
 
                 <p>
-                    MathSwe Ops automates the development and
-                    deployment of mathematical software with <b>SWAM
-                    (Special Software and Models)</b> operations.
+                    While mathematical software requires a <b>DSL (Domain
+                    Specific Language)</b> to be engineering grade, these
+                    formalities require non-mathematical <b>Special
+                    Operations</b> to reach production.
                 </p>
 
                 <p>
-                    Extended software required in real-world computing like,
-                    operations, high-performance implementations, and
-                    academic
-                    tools are, examples of external domains for powering
-                    modern
-                    mathematics.
+                    Implementation details can encompass development and
+                    deployment operations, compilation, high-performance
+                    implementations, and academic tools.
                 </p>
 
                 <p>
-                    All the necessary tools extrinsic to mathematics are
-                    aimed
-                    to be equipped by <b>SWAM</b>.
+                    SWAM is an abstraction based
+                    on <b>MSWE (Mathematical Software Engineering)</b>, which
+                    ensures the <b>integration</b> of mathematical formalities
+                    into production. Therefore, the expression <i>DSL +
+                    SWAM</i> partitions an engineering-grade software design.
+                </p>
+
+                <p>
+                    MSWE empowers SWAM implementations to equip all the tools
+                    and operations <b>extrinsic to mathematics</b> to
+                    materialize mathematical software.
                 </p>
             </div>
         </section>
