@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // This file is part of https://github.com/mathsoftware/mathsoftware---mvp
 
-import "./Ops.css";
+import "./Swam.css";
 import specialIcon from "@app/assets/special.png";
 import { Heading } from "@app/main/Heading.tsx";
 
-function Ops() {
+function Swam() {
     return <>
         <section className="swam">
             <div className="wrap">
@@ -49,4 +49,4 @@ function Ops() {
     </>;
 }
 
-export default Ops;
+export default Swam;

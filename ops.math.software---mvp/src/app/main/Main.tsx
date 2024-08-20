@@ -4,7 +4,7 @@
 
 import Header from "@app/main/Header.tsx";
 import "@app/main/Main.css";
-import Ops from "./ops/Ops.tsx";
+import Swam from "./ops/Swam.tsx";
 
 function Main() {
     return <>
@@ -17,7 +17,7 @@ function Main() {
                         <p>Mathematical Software Operations</p>
                     </section>
 
-                    <Ops />
+                    <Swam />
                 </article>
             </main>
         </section>
