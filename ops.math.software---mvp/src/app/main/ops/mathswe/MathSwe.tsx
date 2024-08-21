@@ -10,7 +10,7 @@ import specialIcon from "@app/assets/special.png";
 
 function MathSwe() {
     return <>
-        <section className="mathswe">
+        <section className="bg-strip mathswe">
             <div className="bg">
                 <div className="wrap">
                     <Heading

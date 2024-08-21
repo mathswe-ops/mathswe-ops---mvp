@@ -43,8 +43,8 @@ h2 {
     margin-bottom: 10px;
 }
 
-article > section::before,
-article > section::after {
+article > section.bg-strip::before,
+article > section.bg-strip::after {
     content: "";
     position: relative;
     width: 100%;

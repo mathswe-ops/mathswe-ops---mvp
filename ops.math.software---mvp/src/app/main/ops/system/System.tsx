@@ -109,7 +109,7 @@ function Command({ command, caption }: CommandProps) {
 
 function System() {
     return <>
-        <section className="system">
+        <section className="bg-strip system">
             <div className="bg">
                 <div className="wrap">
                     <Heading
