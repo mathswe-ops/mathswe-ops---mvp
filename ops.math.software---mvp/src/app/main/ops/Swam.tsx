@@ -32,7 +32,7 @@ function Swam() {
                 </p>
 
                 <p>
-                    SWAM is an abstraction based
+                    SWAM is an <b>abstraction</b> based
                     on <b>MSWE (Mathematical Software Engineering)</b>, which
                     ensures the <b>integration</b> of mathematical formalities
                     into production. Therefore, the expression <i>DSL +

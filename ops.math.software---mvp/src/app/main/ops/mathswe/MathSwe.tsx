@@ -48,7 +48,7 @@ function MathSwe() {
                         MathSwe belongs to the most concrete MSWE spectrum with
                         challenges involving extrinsic software, talent
                         networking, and transparent entrepreneurial undertakings
-                        to <b>deliver modern mathematics</b>.
+                        to <b>deliver</b> modern mathematics.
                     </p>
 
                     <SubHeading
