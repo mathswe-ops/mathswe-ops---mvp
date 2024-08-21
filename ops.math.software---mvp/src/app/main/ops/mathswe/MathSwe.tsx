@@ -60,6 +60,18 @@ function MathSwe() {
                     <p>
                         Automating MSW Development and Deployment
                     </p>
+
+                    <SubHeading
+                        id="mathswe-com"
+                        title="MathSwe Com"
+                        icon={ mathsweIcon }
+                    />
+
+                    <p>
+                        MathSwe Business Operations
+                    </p>
+
+                    <p>In progress and forthcoming...</p>
                 </div>
             </div>
         </section>
