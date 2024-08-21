@@ -61,6 +61,10 @@ function MathSwe() {
                         Automating MSW Development and Deployment
                     </p>
 
+                    <p>
+                        Currently providing MVP tools to automate Ubuntu.
+                    </p>
+
                     <SubHeading
                         id="mathswe-com"
                         title="MathSwe Com"
