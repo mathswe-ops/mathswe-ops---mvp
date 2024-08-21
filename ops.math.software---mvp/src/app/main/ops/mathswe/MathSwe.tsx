@@ -5,6 +5,8 @@
 import "./MathSwe.css";
 import mathsweIcon from "@app/assets/mathswe.svg";
 import { Heading } from "@app/main/Heading.tsx";
+import { SubHeading } from "../../Heading.tsx";
+import specialIcon from "@app/assets/special.png";
 
 function MathSwe() {
     return <>
@@ -47,6 +49,16 @@ function MathSwe() {
                         challenges involving extrinsic software, talent
                         networking, and transparent entrepreneurial undertakings
                         to <b>deliver modern mathematics</b>.
+                    </p>
+
+                    <SubHeading
+                        id="mathswe-ops"
+                        title="MathSwe Ops"
+                        icon={ specialIcon }
+                    />
+
+                    <p>
+                        Automating MSW Development and Deployment
                     </p>
                 </div>
             </div>
