@@ -1,0 +1,344 @@
+/* Copyright (c) 2024 Tobias Briones. All rights reserved. */
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* This file is part of https://github.com/mathsoftware/mathsoftware---mvp */
+
+/* These are some of the compatible styles I made for MSW Engineer in 2023 */
+
+* {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+html {
+    font-size: 16px;
+    background-color: var(--content-background-color) !important;
+}
+
+html,
+body {
+    width: 100%;
+    min-width: 320px;
+}
+
+a {
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: none;
+}
+
+
+:root {
+    --content-background-color: #fff;
+    --title-text-color: #212121;
+    --content-text-color: #424242;
+    --secondary-text-color: #616161;
+    --third-text-color: #757575;
+    --accent-color: #607d8b;
+    --hover-background-color: #f5f5f5;
+    --accent-blue-text-color: #1565c0;
+}
+
+:root {
+    --content-padding: 5%;
+    --nav-height: 4rem;
+}
+
+body {
+    background-color: var(--content-background-color);
+    color: var(--content-text-color);
+}
+
+
+h1, h2, h3, h4, h5, figcaption {
+    font-weight: bold;
+    color: var(--title-text-color);
+}
+
+h2, h3, h4, h5, h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+figcaption {
+    text-align: center;
+}
+
+a {
+    color: var(--accent-blue-text-color);
+}
+
+footer {
+    padding: var(--content-padding);
+    margin-bottom: 64px;
+}
+
+footer h5 {
+    font-size: 1rem;
+}
+
+footer {
+    font-size: 0.875rem;
+}
+
+footer > .nav ul {
+    list-style-type: none;
+}
+
+footer > .nav a {
+    font-weight: bold;
+    color: #37474f;
+}
+
+footer .legal .notice,
+footer .legal .notice p,
+footer .legal .notice a {
+    font-size: 0.625rem;
+}
+
+
+p img,
+figure img,
+figure video {
+    display: block;
+    max-width: 100%;
+    margin: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 1rem;
+}
+
+video {
+    min-width: 60%;
+}
+
+img ~ figcaption,
+video ~ figcaption {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+figcaption {
+    text-align: center;
+}
+
+figure > figcaption {
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+@media screen and (min-width: 720px) {
+    footer {
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    footer {
+        position: absolute;
+        width: 25%;
+        top: 100%;
+        left: 75%;
+        padding: var(--content-padding);
+        margin-bottom: 0;
+    }
+}
+
+/* Social Buttons */
+.social .btn {
+    padding: 0.125rem 0.5rem;
+    margin: 0.25rem;
+}
+
+.social svg {
+    font-size: 0.75rem;
+    color: white !important;
+}
+
+.social .btn:active {
+    border: 1px solid #fafafa;
+}
+
+.social a:hover {
+    text-decoration: none;
+}
+
+/* Twitter Button */
+.btn-twitter {
+    background-color: #1DA1F2;
+    border-radius: 16px;
+}
+
+.btn-twitter:hover,
+.btn-twitter:active {
+    background-color: #0e81ce !important;
+}
+
+/* GitHub Button */
+.btn-github {
+    background-color: #333;
+    border-radius: 16px;
+}
+
+.btn-github:hover,
+.btn-github:active {
+    background-color: #222 !important;
+}
+
+/* LinkedIn Button */
+.btn-linkedin {
+    background-color: #0077B5;
+    border-radius: 16px;
+}
+
+.btn-linkedin:hover,
+.btn-linkedin:active {
+    background-color: #005d8c !important;
+}
+
+
+
+pre {
+    background-color: #fafafa !important;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+code {
+    background-color: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.25rem;
+    padding: 0 0.25rem;
+    color: inherit;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+pre {
+    margin: 0;
+}
+
+pre code {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+div > div.highlight {
+    border: 1px solid #e0e0e0;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+}
+
+.header ~ div > div.highlight {
+    border-radius: 0;
+    margin-bottom: 0;
+    border-top: none;
+    border-bottom: none;
+}
+
+.header ~ .abstract {
+    padding: 1rem;
+    text-align: center;
+    font-weight: lighter;
+    background-color: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-bottom: none;
+}
+
+.header ~ figcaption,
+figure > figcaption {
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+code > span {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+figure > .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+    margin-bottom: 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+figure > .header > .caption {
+    padding: 0.5rem 1rem;
+    flex: 1;
+}
+
+figure > .header > .menu {
+    display: flex;
+    align-self: stretch;
+    gap: 0;
+}
+
+figure > .header > .menu > button {
+    display: flex;
+    padding: 0 1rem;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-top-right-radius: 0.5rem;
+    background: none;
+    cursor: pointer;
+}
+
+figure > .header > .menu > button > .material-symbols-rounded {
+    font-size: 1.25rem;
+    color: var(--content-text-color);
+}
+
+figure > .header > .menu > button:hover {
+    background-color: var(--hover-background-color);
+}
+
+figure > .header > .menu > button > .tooltip {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    padding: 0.5rem 0.75rem;
+    transition: opacity 0.4s;
+    border-radius: 0.5rem 0 0 0.5rem;
+    border: 0.0625rem solid #f0f0f0;
+    background-color: var(--content-background-color);
+    pointer-events: none;
+}
+
+figure > .headerless {
+    position: absolute;
+    width: 100%;
+    top: 0;
+}
+
+figure > .headerless > .caption {
+    height: 1.5rem;
+    box-sizing: content-box;
+}
+
+figure > .headerless > .menu {
+    z-index: 1;
+}
+
+figure > .headerless > .menu > button {
+    border-bottom-left-radius: 0.5rem;
+}
+
+.headerless ~ div > div.highlight {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    border-top: 1px solid #e0e0e0;
+}
