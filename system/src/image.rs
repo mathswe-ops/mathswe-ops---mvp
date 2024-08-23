@@ -147,7 +147,7 @@ impl ImageLoadContext {
 
     pub fn basic_image_from<T: ImageOps + 'static>(
         os: Os,
-        cons: fn(Os) -> T
+        cons: fn(Os) -> T,
     ) -> Box<dyn ImageOps> {
         Box::new(cons(os))
     }
@@ -155,7 +155,7 @@ impl ImageLoadContext {
     fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
         os: Os,
         info: D,
-        cons: impl Fn(Os, D) -> T
+        cons: impl Fn(Os, D) -> T,
     ) -> Box<dyn ImageOps> {
         Box::new(cons(os, info))
     }
