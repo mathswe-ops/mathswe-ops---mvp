@@ -5,11 +5,11 @@
 use std::fmt::{Display, Formatter};
 use clap::{Parser, Subcommand};
 
-use crate::exec::ImageOpsExecution;
+use crate::main::exec::ImageOpsExecution;
 use crate::image::{ImageId, ImageOps};
 use crate::image::repository::Repository;
 use crate::os::{detect_os, Os};
-use crate::system::Operation::{Install, Reinstall, Uninstall};
+use crate::main::system::Operation::{Install, Reinstall, Uninstall};
 
 #[derive(Parser)]
 #[command(name = "system")]
