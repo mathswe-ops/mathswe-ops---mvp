@@ -2,16 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
+use crate::image::{ImageId};
+use crate::main::cli::CliCommand::{Install, Reinstall, Uninstall};
+use crate::main::exec::{OperationContext, OperationExecution};
+use crate::main::system::Operation;
 use clap::{Parser, Subcommand};
 use std::fmt::{Display, Formatter};
-
-use crate::image::repository::Repository;
-use crate::image::{ImageId, ImageOps};
-use crate::main::cli::CliCommand::{Install, Reinstall, Uninstall};
-use crate::main::exec::{OperationContext};
-use crate::main::image_exec::ImageOpsExecution;
-use crate::main::system::Operation;
-use crate::os::Os;
 
 #[derive(Subcommand)]
 pub enum CliCommand {
@@ -46,32 +42,34 @@ impl CliCommand {
 
     pub fn execute(&self) -> Result<(), String> {
         let ctx = OperationContext::load()?;
-        let os = ctx.os;
+        let exec = OperationExecution { ctx };
 
+        match self {
+            Install { images } =>
+                self.execute_batch(images, |id_raw| exec.install(id_raw)),
+
+            Uninstall { images } =>
+                self.execute_batch(images, |id_raw| exec.uninstall(id_raw)),
+
+            Reinstall { images } =>
+                self.execute_batch(images, |id_raw| exec.reinstall(id_raw)),
+        }
+    }
+
+    fn execute_batch(
+        &self,
+        images: &Vec<String>,
+        exec: impl Fn(&String) -> Result<ImageId, String>,
+    ) -> Result<(), String> {
         // 0: Number of Ok results, 1: List of IDs that failed
         let empty_report = (0, Vec::new());
 
-        type Exec = fn(ImageOpsExecution) -> Result<ImageId, String>;
+        let report = images
+            .iter()
+            .map(exec)
+            .fold(empty_report, Self::success_fail_report);
 
-        let process_image_with
-            = |exec: Exec| move |id_raw: &String| Self::load_image_ops(id_raw, &os)
-            .map(ImageOpsExecution::new)
-            .and_then(exec);
-
-        let batch_image_op = |images: &Vec<String>, exec: Exec| {
-            let report = images
-                .iter()
-                .map(process_image_with(exec))
-                .fold(empty_report, Self::success_fail_report);
-
-            self.image_batch_report(report)
-        };
-
-        match self {
-            Install { images } => batch_image_op(images, |exec| exec.install()),
-            Uninstall { images } => batch_image_op(images, |exec| exec.uninstall()),
-            Reinstall { images } => batch_image_op(images, |exec| exec.reinstall()),
-        }
+        self.print_batch_report(report)
     }
 
     fn batch_report_msg(&self, (ok_num, err_ids): (i32, Vec<String>)) -> String {
@@ -102,7 +100,7 @@ impl CliCommand {
         }
     }
 
-    fn image_batch_report(&self, report: (i32, Vec<String>)) -> Result<(), String> {
+    fn print_batch_report(&self, report: (i32, Vec<String>)) -> Result<(), String> {
         match report.clone() {
             (ok_num, err_ids) if err_ids.is_empty() => {
                 println!("{}", self.batch_report_success_msg(ok_num));
@@ -113,22 +111,6 @@ impl CliCommand {
                 Err(self.batch_report_msg(report))
             }
         }
-    }
-
-    fn load_image_ops(id_raw: &str, os: &Os) -> Result<Box<dyn ImageOps>, String> {
-        Self::load_image(id_raw, os.clone())
-            .map_err(|error| {
-                println!("{}", format!("❌ Fail to load image {}.\nCause: {}", id_raw, error));
-                id_raw.to_string()
-            })
-    }
-
-    fn load_image(id_raw: &str, os: Os) -> Result<Box<dyn ImageOps>, String> {
-        Repository::image_loader_from(id_raw)
-            .and_then(|loader| loader
-                .load_image(os.clone())
-                .map_err(|error| error.to_string())
-            )
     }
 
     fn success_fail_report(acc: (i32, Vec<String>), result: Result<ImageId, String>) -> (i32, Vec<String>) {
