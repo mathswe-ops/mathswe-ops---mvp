@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::fmt::{Display, Formatter};
 use clap::{Parser, Subcommand};
+use std::fmt::{Display, Formatter};
 
-use crate::main::exec::ImageOpsExecution;
-use crate::image::{ImageId, ImageOps};
 use crate::image::repository::Repository;
+use crate::image::{ImageId, ImageOps};
 use crate::main::cli::CliCommand::{Install, Reinstall, Uninstall};
+use crate::main::exec::{ImageOpsExecution, OperationContext};
 use crate::main::system::Operation;
-use crate::os::{detect_os, Os};
+use crate::os::Os;
 
 #[derive(Subcommand)]
 pub enum CliCommand {
@@ -44,9 +44,8 @@ impl CliCommand {
     }
 
     pub fn execute(&self) -> Result<(), String> {
-        let os = detect_os()
-            .map_err(|io_error| io_error.to_string())?
-            .ok_or_else(|| "OS unsupported".to_string())?;
+        let ctx = OperationContext::load()?;
+        let os = ctx.os;
 
         // 0: Number of Ok results, 1: List of IDs that failed
         let empty_report = (0, Vec::new());
