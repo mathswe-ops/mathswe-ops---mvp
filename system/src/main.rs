@@ -16,6 +16,7 @@ mod os;
 
 mod main {
     pub mod system;
+    pub mod image_exec;
     pub mod batch;
     pub mod exec;
     pub mod cli;
