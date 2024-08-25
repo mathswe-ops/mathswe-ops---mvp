@@ -8,7 +8,8 @@ use std::fmt::{Display, Formatter};
 use crate::image::repository::Repository;
 use crate::image::{ImageId, ImageOps};
 use crate::main::cli::CliCommand::{Install, Reinstall, Uninstall};
-use crate::main::exec::{ImageOpsExecution, OperationContext};
+use crate::main::exec::{OperationContext};
+use crate::main::image_exec::ImageOpsExecution;
 use crate::main::system::Operation;
 use crate::os::Os;
 
