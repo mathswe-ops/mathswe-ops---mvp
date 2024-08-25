@@ -284,6 +284,18 @@ impl Software {
     }
 }
 
+impl Display for Software {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Software:\n  Provider: {}\n  Name: {}\n  Version: {}",
+            self.provider,
+            self.name,
+            self.version
+        )
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Package {
     pub name: String,
