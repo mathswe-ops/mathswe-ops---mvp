@@ -3,7 +3,7 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use crate::image::repository::Repository;
-use crate::image::{ImageId, ImageOps};
+use crate::image::{Config, ImageId, ImageOps};
 use crate::main::image_exec::ImageOpsExecution;
 use crate::os;
 use crate::os::Os;
@@ -46,6 +46,15 @@ impl OperationContext {
                 .map_err(|error| error.to_string())
             )
     }
+
+    fn load_config(
+        &self,
+        id_raw: &str,
+    ) -> Result<Box<dyn Config>, String> {
+        Repository::image_loader_from(id_raw)?
+            .load_config(self.os.clone())
+            .map_err(|error| error.to_string())
+    }
 }
 
 #[derive(Clone)]
@@ -82,5 +91,35 @@ impl OperationExecution {
         let exec = ImageOpsExecution::new(ops);
 
         exec.reinstall()
+    }
+
+    pub fn config(
+        &self,
+        id_raw: &String,
+    ) -> Result<ImageId, String> {
+        let ops = self.ctx.load_config(id_raw)?;
+        let id = ops.image_id();
+
+        println!("Configuring {}...", id);
+
+        ops
+            .config()
+            .map(|_| Self::ok(id.clone(), format!("✅ Config image {}.", id)))
+            .map_err(|error| Self::err(
+                id.clone(),
+                format!("❌ Fail to config {}.\n Cause: {}", id, error),
+            ))
+    }
+
+    fn ok(id: ImageId, msg: String) -> ImageId {
+        println!("{}", msg);
+
+        id
+    }
+
+    fn err(id: ImageId, error_msg: String) -> String {
+        eprintln!("{}", error_msg);
+
+        id.to_string()
     }
 }

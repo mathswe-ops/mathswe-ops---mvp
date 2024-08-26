@@ -8,6 +8,7 @@ use crate::main::exec::{OperationContext, OperationExecution};
 use crate::main::system::Operation;
 use clap::{Parser, Subcommand};
 use std::fmt::{Display, Formatter};
+use CliCommand::Config;
 
 #[derive(Subcommand)]
 pub enum CliCommand {
@@ -20,6 +21,10 @@ pub enum CliCommand {
         images: Vec<String>,
     },
     Reinstall {
+        #[arg(required = true)]
+        images: Vec<String>,
+    },
+    Config {
         #[arg(required = true)]
         images: Vec<String>,
     },
@@ -37,6 +42,7 @@ impl CliCommand {
             Install { .. } => Operation::Install,
             Uninstall { .. } => Operation::Uninstall,
             Reinstall { .. } => Operation::Reinstall,
+            Config { .. } => Operation::Config,
         }
     }
 
@@ -54,6 +60,9 @@ impl CliCommand {
 
             Reinstall { images } =>
                 batch.execute(images, |id_raw| exec.reinstall(id_raw)),
+
+            Config { images } =>
+                batch.execute(images, |id_raw| exec.config(id_raw)),
         }
     }
 }

@@ -3,6 +3,7 @@
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
 use std::fmt::{Display, Formatter};
+use Operation::Config;
 use crate::main::system::Operation::{Install, Reinstall, Uninstall};
 
 #[derive(Clone)]
@@ -10,6 +11,7 @@ pub enum Operation {
     Install,
     Uninstall,
     Reinstall,
+    Config,
 }
 
 impl Display for Operation {
@@ -18,6 +20,7 @@ impl Display for Operation {
             Install => "install",
             Uninstall => "uninstall",
             Reinstall => "reinstall",
+            Config => "config",
         };
 
         write!(f, "{}", msg)

@@ -5,15 +5,15 @@
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use DesktopImageId::{CLion, DataGrip, Goland, IntelliJIdea, JetBrainsToolbox, PhpStorm, PyCharm, Rider, RubyMine, RustRover, VsCode, WebStorm};
+use ImageOperationError::OperationNotImplemented;
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
-use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
-use crate::image::desktop::DesktopImageId;
-use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::desktop::jetbrains_ide::JetBrainsIdeImage;
 use crate::image::desktop::jetbrains_toolbox::JetBrainsToolboxImage;
 use crate::image::desktop::vscode::VsCodeImage;
 use crate::image::desktop::zoom::ZoomImage;
+use crate::image::desktop::DesktopImageId;
+use crate::image::desktop::DesktopImageId::Zoom;
 use crate::image::server::go::GoImage;
 use crate::image::server::gradle::GradleImage;
 use crate::image::server::java::JavaImage;
@@ -23,6 +23,7 @@ use crate::image::server::nvm::NvmImage;
 use crate::image::server::rust::RustImage;
 use crate::image::server::sdkman::SdkmanImage;
 use crate::image::server::ServerImageId;
+use crate::image::{Config, ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOperationError, ImageOps, LoadImage, StrFind, ToImageId};
 use crate::os::Os;
 
 struct RepositoryImageLoader<T> where T: Display + ToImageId {
@@ -63,6 +64,14 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
 
         Ok(image)
     }
+
+    fn load_config(&self, _: Os)
+        -> Result<Box<dyn Config>, ImageOperationError> {
+        Err(OperationNotImplemented(
+            self.id.to_image_id(),
+            "config".to_string(),
+        ))
+    }
 }
 
 impl ImageLoader for RepositoryImageLoader<DesktopImageId> {}
@@ -95,6 +104,25 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
         };
 
         Ok(image)
+    }
+
+    fn load_config(&self, os: Os)
+        -> Result<Box<dyn Config>, ImageOperationError> {
+        let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
+        let ctx = ImageLoadContext::new(&os, info_loader);
+
+        let config = match self.id {
+            Miniconda => ctx
+                .load_concrete(MinicondaImage::new)
+                .and_then(|image| ctx.load_to_image_config(image))?,
+
+            _ => Err(OperationNotImplemented(
+                self.id.to_image_id(),
+                "config".to_string(),
+            ))?
+        };
+
+        Ok(config)
     }
 }
 
