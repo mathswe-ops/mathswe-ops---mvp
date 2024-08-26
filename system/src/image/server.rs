@@ -793,7 +793,7 @@ pub mod miniconda {
 
     use Os::Linux;
 
-    use crate::cmd::exec_cmd;
+    use crate::cmd::{exec_cmd, print_output};
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
     use crate::download::{DownloadRequest, Downloader, Integrity};
@@ -955,7 +955,8 @@ pub mod miniconda {
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
     pub struct MinicondaConfig {
-
+        env_name: String,
+        packages: Vec<String>,
     }
 
     type MinicondaImageConfig = ImageConfig<MinicondaImage, MinicondaConfig>;
@@ -968,8 +969,46 @@ pub mod miniconda {
 
     impl Config for MinicondaImageConfig {
         fn config(&self) -> Result<(), String> {
-            println!("Configuring Miniconda...");
-            todo!()
+            let MinicondaConfig { env_name, packages } = self.1.clone();
+
+            println!(
+                "Creating Miniconda environment `{}` with packages {:?}...",
+                env_name,
+                packages,
+            );
+
+            let create_env_args = ["create", "-n", &env_name, "--yes"]
+                .iter()
+                .map(|&s| s)
+                .chain(packages.iter().map(String::as_str))
+                .collect::<Vec<&str>>();
+
+            let output = exec_cmd("conda", &create_env_args)
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Installing Jupyter kernel for `{env_name}`...");
+
+            let output = exec_cmd(
+                "conda",
+                &[
+                    "run",
+                    "-n",
+                    &env_name,
+                    "python",
+                    "-m",
+                    "ipykernel",
+                    "install",
+                    "--user",
+                    "--name",
+                    &env_name
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            Ok(())
         }
     }
 }

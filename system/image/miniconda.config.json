@@ -1,3 +1,11 @@
 {
-
+  "env_name": "ws",
+  "packages": [
+    "jupyter",
+    "ipykernel",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "scikit-learn"
+  ]
 }
