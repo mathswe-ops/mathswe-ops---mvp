@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use crate::image::{ImageId, ImageOps};
 use crate::image::repository::Repository;
+use crate::image::{ImageId, ImageOps};
 use crate::main::image_exec::ImageOpsExecution;
 use crate::os;
 use crate::os::Os;
@@ -27,7 +27,7 @@ impl OperationContext {
 
     fn load_image_ops(
         &self,
-        id_raw: &str
+        id_raw: &str,
     ) -> Result<Box<dyn ImageOps>, String> {
         self.load_image(id_raw)
             .map_err(|error| {
@@ -38,7 +38,7 @@ impl OperationContext {
 
     fn load_image(
         &self,
-        id_raw: &str
+        id_raw: &str,
     ) -> Result<Box<dyn ImageOps>, String> {
         Repository::image_loader_from(id_raw)
             .and_then(|loader| loader
