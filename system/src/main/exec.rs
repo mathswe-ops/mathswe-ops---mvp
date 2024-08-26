@@ -67,30 +67,30 @@ impl OperationExecution {
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
-
-        exec.install()
+        self.ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .install()
     }
 
     pub fn uninstall(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
-
-        exec.uninstall()
+        self.ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .uninstall()
     }
 
     pub fn reinstall(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
-
-        exec.reinstall()
+        self.ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .reinstall()
     }
 
     pub fn config(
