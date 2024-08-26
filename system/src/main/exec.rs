@@ -4,7 +4,7 @@
 
 use crate::image::repository::Repository;
 use crate::image::{Config, ImageId, ImageOps};
-use crate::main::image_exec::ImageOpsExecution;
+use crate::main::image_exec::{ConfigExecution, ImageOpsExecution};
 use crate::os;
 use crate::os::Os;
 
@@ -97,29 +97,9 @@ impl OperationExecution {
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_config(id_raw)?;
-        let id = ops.image_id();
-
-        println!("Configuring {}...", id);
-
-        ops
+        self.ctx
+            .load_config(id_raw)
+            .map(ConfigExecution::new)?
             .config()
-            .map(|_| Self::ok(id.clone(), format!("✅ Config image {}.", id)))
-            .map_err(|error| Self::err(
-                id.clone(),
-                format!("❌ Fail to config {}.\n Cause: {}", id, error),
-            ))
-    }
-
-    fn ok(id: ImageId, msg: String) -> ImageId {
-        println!("{}", msg);
-
-        id
-    }
-
-    fn err(id: ImageId, error_msg: String) -> String {
-        eprintln!("{}", error_msg);
-
-        id.to_string()
     }
 }
