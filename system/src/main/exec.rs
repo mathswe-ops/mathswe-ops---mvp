@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use crate::image::{ImageId, ImageOps};
 use crate::image::repository::Repository;
-use crate::main::image_exec::ImageOpsExecution;
+use crate::image::{Config, ImageId, ImageOps};
+use crate::main::image_exec::{ConfigExecution, ImageOpsExecution};
 use crate::os;
 use crate::os::Os;
 
@@ -27,7 +27,7 @@ impl OperationContext {
 
     fn load_image_ops(
         &self,
-        id_raw: &str
+        id_raw: &str,
     ) -> Result<Box<dyn ImageOps>, String> {
         self.load_image(id_raw)
             .map_err(|error| {
@@ -38,13 +38,22 @@ impl OperationContext {
 
     fn load_image(
         &self,
-        id_raw: &str
+        id_raw: &str,
     ) -> Result<Box<dyn ImageOps>, String> {
         Repository::image_loader_from(id_raw)
             .and_then(|loader| loader
                 .load_image(self.os.clone())
                 .map_err(|error| error.to_string())
             )
+    }
+
+    fn load_config(
+        &self,
+        id_raw: &str,
+    ) -> Result<Box<dyn Config>, String> {
+        Repository::image_loader_from(id_raw)?
+            .load_config(self.os.clone())
+            .map_err(|error| error.to_string())
     }
 }
 
@@ -54,33 +63,51 @@ pub struct OperationExecution {
 }
 
 impl OperationExecution {
-    pub fn install(
+    pub fn config(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
+        self.ctx
+            .load_config(id_raw)
+            .map(ConfigExecution::new)?
+            .config()
+    }
 
-        exec.install()
+    pub fn install(
+        &self,
+        id_raw: &String,
+        config: &bool,
+    ) -> Result<ImageId, String> {
+        let image_id = self
+            .ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .install()?;
+
+        if *config {
+            self.config(id_raw)?;
+        }
+
+        Ok(image_id)
     }
 
     pub fn uninstall(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
-
-        exec.uninstall()
+        self.ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .uninstall()
     }
 
     pub fn reinstall(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
-        let ops = self.ctx.load_image_ops(id_raw)?;
-        let exec = ImageOpsExecution::new(ops);
-
-        exec.reinstall()
+        self.ctx
+            .load_image_ops(id_raw)
+            .map(ImageOpsExecution::new)?
+            .reinstall()
     }
 }

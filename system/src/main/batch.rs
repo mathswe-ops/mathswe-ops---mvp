@@ -4,6 +4,7 @@
 
 use std::iter::Map;
 use std::slice::Iter;
+use Operation::Config;
 use crate::image::ImageId;
 use crate::main::system::Operation;
 use crate::main::system::Operation::{Install, Reinstall, Uninstall};
@@ -62,7 +63,7 @@ impl BatchOperation {
 
     pub fn print_batch_report(
         &self,
-        BatchReport{ ok_num, failed }: BatchReport,
+        BatchReport { ok_num, failed }: BatchReport,
     ) -> Result<(), String> {
         let report = (ok_num, failed);
 
@@ -83,6 +84,7 @@ impl BatchOperation {
             Install => format!("{} images successfully installed; {} images failed to install.", ok_num, err_ids.len()),
             Uninstall => format!("{} images successfully uninstalled; {} images failed to uninstall.", ok_num, err_ids.len()),
             Reinstall => format!("{} images successfully reinstalled; {} images failed to reinstall.", ok_num, err_ids.len()),
+            Config => format!("{} images successfully configured; {} images failed to configure.", ok_num, err_ids.len()),
         }
     }
 
@@ -93,6 +95,7 @@ impl BatchOperation {
             Install => format!("✅ Install {} image{}.", ok_num, plural),
             Uninstall => format!("✅ Uninstall {} image{}.", ok_num, plural),
             Reinstall => format!("✅ Reinstall {} image{}.", ok_num, plural),
+            Config => format!("✅ Config {} image{}.", ok_num, plural),
         }
     }
 
@@ -103,6 +106,7 @@ impl BatchOperation {
             Install => format!("❌ Fail to install {} image{}: {:?}", err_ids.len(), plural, err_ids),
             Uninstall => format!("❌ Fail to uninstall {} image{}: {:?}", err_ids.len(), plural, err_ids),
             Reinstall => format!("❌ Fail to reinstall {} image{}: {:?}", err_ids.len(), plural, err_ids),
+            Config => format!("❌ Fail to config {} image{}: {:?}", err_ids.len(), plural, err_ids),
         }
     }
 }

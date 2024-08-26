@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
@@ -77,14 +77,16 @@ pub struct ServerImage(ServerImageId, Package);
 
 impl_image!(ServerImage);
 
+
+
 pub mod rust {
     use reqwest::Url;
 
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Rust;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::Os::Linux;
@@ -157,10 +159,10 @@ pub mod go {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::download::{Downloader, DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Go;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::Os::Linux;
@@ -298,16 +300,16 @@ pub mod go {
 }
 
 pub mod sdkman {
-    use std::{env, fs};
     use std::path::Path;
+    use std::{env, fs};
 
     use reqwest::Url;
 
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Sdkman;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, Software};
@@ -418,10 +420,10 @@ pub mod java {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::image::{ImageOps, Install, Uninstall};
-    use crate::image::Image;
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Java;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVerVendor, Software};
@@ -496,10 +498,10 @@ pub mod gradle {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::image::{ImageOps, Install, Uninstall};
-    use crate::image::Image;
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Gradle;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVer, Software};
@@ -585,17 +587,17 @@ pub mod gradle {
 }
 
 pub mod nvm {
-    use std::{env, fs};
     use std::path::Path;
+    use std::{env, fs};
 
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Nvm;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVer, Software};
@@ -706,10 +708,10 @@ pub mod node {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::image::{ImageOps, Install, Uninstall};
-    use crate::image::Image;
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Node;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVer, Software};
@@ -782,27 +784,27 @@ pub mod node {
 }
 
 pub mod miniconda {
-    use std::{env, fs};
     use std::path::Path;
     use std::process::Output;
+    use std::{env, fs};
 
     use reqwest::Url;
     use serde::{Deserialize, Serialize};
 
     use Os::Linux;
 
-    use crate::{cmd, image_ops_impl};
-    use crate::cmd::exec_cmd;
-    use crate::download::{Downloader, DownloadRequest, Integrity};
+    use crate::cmd::{exec_cmd, print_output};
     use crate::download::hashing::Hash;
     use crate::download::hashing::HashAlgorithm::Sha256;
-    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Miniconda;
+    use crate::image::{Config, Image, ImageConfig, ImageOps, Install, ToImageConfig, Uninstall};
     use crate::os::Os;
     use crate::os::OsArch::X64;
     use crate::package::{Package, SemVer, Software};
     use crate::tmp::TmpWorkingDir;
+    use crate::{cmd, image_ops_impl};
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
     pub struct MinicondaInfo {
@@ -821,6 +823,7 @@ pub mod miniconda {
         }
     }
 
+    #[derive(Clone)]
     pub struct MinicondaImage(ServerImage);
 
     impl MinicondaImage {
@@ -881,8 +884,7 @@ pub mod miniconda {
                 ],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             println!("Miniconda installed.");
 
@@ -894,8 +896,7 @@ pub mod miniconda {
                 &["init", "bash"],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             let conda = miniconda_dir.join("bin").join("conda");
             let output = exec_cmd(
@@ -903,8 +904,7 @@ pub mod miniconda {
                 &["init", "zsh"],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             println!("Miniconda installed and initialized.");
 
@@ -920,8 +920,7 @@ pub mod miniconda {
 
             let print_optional_step = |output: cmd::Result<Output>| match output {
                 Ok(o) => {
-                    println!("stdout: {}", String::from_utf8_lossy(&o.stdout));
-                    println!("stderr: {}", String::from_utf8_lossy(&o.stderr));
+                    print_output(o);
                 }
                 Err(error) => {
                     eprintln!("Fail to remove conda initialization scripts (optional step): {}", error);
@@ -949,4 +948,63 @@ pub mod miniconda {
     }
 
     impl ImageOps for MinicondaImage { image_ops_impl!(); }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct MinicondaConfig {
+        env_name: String,
+        packages: Vec<String>,
+    }
+
+    type MinicondaImageConfig = ImageConfig<MinicondaImage, MinicondaConfig>;
+
+    impl ToImageConfig<MinicondaConfig> for MinicondaImage {
+        fn to_image_config(&self, config: MinicondaConfig) -> MinicondaImageConfig {
+            ImageConfig(self.clone(), config)
+        }
+    }
+
+    impl Config for MinicondaImageConfig {
+        fn config(&self) -> Result<(), String> {
+            let MinicondaConfig { env_name, packages } = self.1.clone();
+
+            println!(
+                "Creating Miniconda environment `{}` with packages {:?}...",
+                env_name,
+                packages,
+            );
+
+            let create_env_args = ["create", "-n", &env_name, "--yes"]
+                .iter()
+                .map(|&s| s)
+                .chain(packages.iter().map(String::as_str))
+                .collect::<Vec<&str>>();
+
+            let output = exec_cmd("conda", &create_env_args)
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Installing Jupyter kernel for `{env_name}`...");
+
+            let output = exec_cmd(
+                "conda",
+                &[
+                    "run",
+                    "-n",
+                    &env_name,
+                    "python",
+                    "-m",
+                    "ipykernel",
+                    "install",
+                    "--user",
+                    "--name",
+                    &env_name
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            Ok(())
+        }
+    }
 }
