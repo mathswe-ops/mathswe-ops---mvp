@@ -884,8 +884,7 @@ pub mod miniconda {
                 ],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             println!("Miniconda installed.");
 
@@ -897,8 +896,7 @@ pub mod miniconda {
                 &["init", "bash"],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             let conda = miniconda_dir.join("bin").join("conda");
             let output = exec_cmd(
@@ -906,8 +904,7 @@ pub mod miniconda {
                 &["init", "zsh"],
             ).map_err(|error| error.to_string())?;
 
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+            print_output(output);
 
             println!("Miniconda installed and initialized.");
 
@@ -923,8 +920,7 @@ pub mod miniconda {
 
             let print_optional_step = |output: cmd::Result<Output>| match output {
                 Ok(o) => {
-                    println!("stdout: {}", String::from_utf8_lossy(&o.stdout));
-                    println!("stderr: {}", String::from_utf8_lossy(&o.stderr));
+                    print_output(o);
                 }
                 Err(error) => {
                     eprintln!("Fail to remove conda initialization scripts (optional step): {}", error);
