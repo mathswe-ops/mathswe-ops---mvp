@@ -15,6 +15,9 @@ pub enum CliCommand {
     Install {
         #[arg(required = true)]
         images: Vec<String>,
+
+        #[arg(long)]
+        config: bool,
     },
     Uninstall {
         #[arg(required = true)]
@@ -52,8 +55,8 @@ impl CliCommand {
         let batch = BatchOperation { operation: self.to_operation() };
 
         match self {
-            Install { images } =>
-                batch.execute(images, |id_raw| exec.install(id_raw)),
+            Install { images, config } =>
+                batch.execute(images, |id_raw| exec.install(id_raw, config)),
 
             Uninstall { images } =>
                 batch.execute(images, |id_raw| exec.uninstall(id_raw)),

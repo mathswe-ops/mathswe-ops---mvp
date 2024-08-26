@@ -63,14 +63,32 @@ pub struct OperationExecution {
 }
 
 impl OperationExecution {
-    pub fn install(
+    pub fn config(
         &self,
         id_raw: &String,
     ) -> Result<ImageId, String> {
         self.ctx
+            .load_config(id_raw)
+            .map(ConfigExecution::new)?
+            .config()
+    }
+
+    pub fn install(
+        &self,
+        id_raw: &String,
+        config: &bool,
+    ) -> Result<ImageId, String> {
+        let image_id = self
+            .ctx
             .load_image_ops(id_raw)
             .map(ImageOpsExecution::new)?
-            .install()
+            .install()?;
+
+        if *config {
+            self.config(id_raw)?;
+        }
+
+        Ok(image_id)
     }
 
     pub fn uninstall(
@@ -91,15 +109,5 @@ impl OperationExecution {
             .load_image_ops(id_raw)
             .map(ImageOpsExecution::new)?
             .reinstall()
-    }
-
-    pub fn config(
-        &self,
-        id_raw: &String,
-    ) -> Result<ImageId, String> {
-        self.ctx
-            .load_config(id_raw)
-            .map(ConfigExecution::new)?
-            .config()
     }
 }
