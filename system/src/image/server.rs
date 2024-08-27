@@ -6,7 +6,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
+use ServerImageId::{Git, Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -22,6 +22,7 @@ pub enum ServerImageId {
     Nvm,
     Node,
     Miniconda,
+    Git,
 }
 
 impl Display for ServerImageId {
@@ -35,6 +36,7 @@ impl Display for ServerImageId {
             Nvm => "nvm",
             Node => "node",
             Miniconda => "miniconda",
+            Git => "git",
         };
 
         write!(f, "{}", msg)
@@ -52,6 +54,7 @@ impl StrFind for ServerImageId {
             "nvm" => Some(Nvm),
             "node" => Some(Node),
             "miniconda" => Some(Miniconda),
+            "git" => Some(Git),
             _ => None
         }
     }
@@ -1007,4 +1010,71 @@ pub mod miniconda {
             Ok(())
         }
     }
+}
+
+pub mod git {
+    use reqwest::Url;
+
+    use crate::cmd::{exec_cmd, print_output};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Git;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, Software};
+
+    pub struct GitImage(ServerImage);
+
+    impl GitImage {
+        pub fn new(os: Os) -> Self {
+            let id = Git;
+            let pkg_name = id.to_string();
+            let version = "latest";
+
+            GitImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("Software Freedom Conservancy", "Git", &version.to_string()),
+                    Url::parse("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for GitImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Git via APT...");
+
+            let output = exec_cmd("sudo", &["apt-get", "install", "git"])
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for GitImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Git via APT...");
+
+            let output = exec_cmd(
+                "sudo",
+                &["apt-get", "--yes", "remove", "git"]
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for GitImage { image_ops_impl!(); }
 }
