@@ -169,6 +169,11 @@ function System() {
                         caption="Reinstallation"
                     />
 
+                    <Command
+                        command="system config { image_1, image_2, ..., image_n}"
+                        caption="Configuration"
+                    />
+
                     <SubSubHeading
                         id="available-images"
                         title="Available Images"
