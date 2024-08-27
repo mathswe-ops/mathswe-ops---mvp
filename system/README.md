@@ -74,6 +74,16 @@ executes the software uninstallation in the host OS.
 You can add one or many images, and the program will uninstall them one after
 another.
 
+#### Install with Config
+
+The flag `--config` will perform a restoration after installing the image, if
+the application supports the `Config` operation for that image.
+
+*Syntax:* `system install --config { image_1, image_2, ..., image_n }`.
+
+The installation operation allows you to execute the image configuration, if
+available, after installing it in your host OS.
+
 ### Image Re-Installation
 
 The composed operation `reinstall` will apply the procedural operations
