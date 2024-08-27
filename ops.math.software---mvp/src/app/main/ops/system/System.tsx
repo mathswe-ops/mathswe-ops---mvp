@@ -144,7 +144,7 @@ function System() {
                     <p>Install + Uninstall</p>
 
                     <Command
-                        command="system install { image_1, image_2, ..., image_n}"
+                        command="system install { image_1, ..., image_n }"
                         caption="Installation"
                     />
 
@@ -160,17 +160,17 @@ function System() {
                     </p>
 
                     <Command
-                        command="system uninstall { image_1, image_2, ..., image_n}"
+                        command="system uninstall { image_1, ..., image_n }"
                         caption="Uninstallation"
                     />
 
                     <Command
-                        command="system reinstall { image_1, image_2, ..., image_n}"
+                        command="system reinstall { image_1, ..., image_n }"
                         caption="Reinstallation"
                     />
 
                     <Command
-                        command="system config { image_1, image_2, ..., image_n}"
+                        command="system config { image_1, ..., image_n }"
                         caption="Configuration"
                     />
 
