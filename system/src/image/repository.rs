@@ -118,6 +118,8 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
                 .load_concrete(MinicondaImage::new)
                 .and_then(|image| ctx.load_to_image_config(image))?,
 
+            Git => ctx.load_to_image_config(GitImage::new(os))?,
+
             _ => Err(OperationNotImplemented(
                 self.id.to_image_id(),
                 "config".to_string(),
