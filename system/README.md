@@ -84,6 +84,19 @@ The composed operation `reinstall` will apply the procedural operations
 You can add one or many images, and the program will reinstall them one after
 another.
 
+### Image Configuration
+
+The operation `Config` loads the image and configuration implementation, if any,
+from the program repository and executes the software restoration.
+
+*Syntax:* `system config { image_1, image_2, ..., image_n }`.
+
+You define the configuration to restore in the `image/` directory. For example,
+`image/miniconda.config.json` for the `server::miniconda::MinicondaConfig` type.
+
+You can add one or many images, and the program will config them one after
+another.
+
 ## Serializable Image Information
 
 While image models with sensitive values that don't change, like URL domain
