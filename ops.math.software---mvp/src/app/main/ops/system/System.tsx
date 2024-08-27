@@ -76,6 +76,18 @@ const ImageGrid: React.FC = () => {
     );
 };
 
+interface InlineCodeProps {
+    children: string;
+}
+
+function InlineCode({ children }: InlineCodeProps) {
+    return <>
+        <code className="code language-plaintext highlighter-rouge">
+            { children }
+        </code>
+    </>;
+}
+
 interface CommandProps {
     command: string;
     caption: string;
@@ -135,6 +147,17 @@ function System() {
                         command="system install { image_1, image_2, ..., image_n}"
                         caption="Installation"
                     />
+
+                    <p>
+                        The flag <InlineCode>--config</InlineCode> provides
+                        image restoration.
+
+                        <p>
+                            For
+                            example, <InlineCode>system install --config
+                            miniconda</InlineCode>.
+                        </p>
+                    </p>
 
                     <Command
                         command="system uninstall { image_1, image_2, ..., image_n}"
