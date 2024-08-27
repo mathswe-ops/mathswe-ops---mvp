@@ -74,6 +74,16 @@ executes the software uninstallation in the host OS.
 You can add one or many images, and the program will uninstall them one after
 another.
 
+#### Install with Config
+
+The flag `--config` will perform a restoration after installing the image, if
+the application supports the `Config` operation for that image.
+
+*Syntax:* `system install --config { image_1, image_2, ..., image_n }`.
+
+The installation operation allows you to execute the image configuration, if
+available, after installing it in your host OS.
+
 ### Image Re-Installation
 
 The composed operation `reinstall` will apply the procedural operations
@@ -82,6 +92,19 @@ The composed operation `reinstall` will apply the procedural operations
 *Syntax:* `system reinstall { image_1, image_2, ..., image_n }`.
 
 You can add one or many images, and the program will reinstall them one after
+another.
+
+### Image Configuration
+
+The operation `Config` loads the image and configuration implementation, if any,
+from the program repository and executes the software restoration.
+
+*Syntax:* `system config { image_1, image_2, ..., image_n }`.
+
+You define the configuration to restore in the `image/` directory. For example,
+`image/miniconda.config.json` for the `server::miniconda::MinicondaConfig` type.
+
+You can add one or many images, and the program will config them one after
 another.
 
 ## Serializable Image Information
