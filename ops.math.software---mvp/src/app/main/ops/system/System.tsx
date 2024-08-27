@@ -152,6 +152,9 @@ function System() {
                     />
 
                     <ImageGrid />
+
+                    <p><strong>MathSwe System Ops MVP v0.1.0</strong></p>
+
                     <p>
                         Technical documentation at&nbsp;
                         <a
