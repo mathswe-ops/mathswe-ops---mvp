@@ -55,9 +55,23 @@ impl Display for CmdError {
 
 pub type Result<T> = std::result::Result<T, CmdError>;
 
+pub fn exec_cmd_async(cmd: &str, args: &[&str]) -> Result<Child> {
+    let io_err = move |cause: IoErrorCause| move |err: Error| CmdError::from(cmd, Io(cause, err));
+
+    Command::new(cmd)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(io_err(StartFail))
+}
+
 pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
     let io_err = move |cause: IoErrorCause| move |err: Error| CmdError::from(cmd, Io(cause, err));
+
     let err = |cause: CmdErrorCause| CmdError::from(cmd, cause);
+
     let check_success = |output: Output| {
         if output.status.success() {
             Ok(output)
@@ -69,6 +83,7 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
             Err(err(UnsuccessfulStatus(code, stdout, stderr)))
         }
     };
+
     let wait_child = |child: Child| {
         child
             .wait_with_output()
@@ -76,14 +91,21 @@ pub fn exec_cmd(cmd: &str, args: &[&str]) -> Result<Output> {
             .and_then(check_success)
     };
 
-    Command::new(cmd)
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(io_err(StartFail))
+    exec_cmd_async(cmd, args)
         .and_then(wait_child)
+}
+
+pub fn print_output(output: Output) {
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    if !stdout.trim().is_empty() {
+        println!("stdout: {stdout}");
+    }
+
+    if !stderr.trim().is_empty() {
+        println!("stderr: {stderr}");
+    }
 }
 
 #[cfg(test)]

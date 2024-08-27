@@ -4,8 +4,7 @@
 
 
 use clap::{Parser};
-
-use crate::system::{System};
+use crate::main::cli::SystemCli;
 
 mod tmp;
 mod download;
@@ -14,11 +13,17 @@ mod cmd;
 mod image;
 mod package;
 mod os;
-mod system;
-mod exec;
+
+mod main {
+    pub mod system;
+    pub mod image_exec;
+    pub mod batch;
+    pub mod exec;
+    pub mod cli;
+}
 
 fn main() {
-    let cli = System::parse();
+    let cli = SystemCli::parse();
     let exec = cli.operation.execute();
 
     match exec {
