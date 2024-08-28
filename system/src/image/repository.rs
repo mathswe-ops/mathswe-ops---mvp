@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use DesktopImageId::{CLion, DataGrip, Goland, IntelliJIdea, JetBrainsToolbox, PhpStorm, PyCharm, Rider, RubyMine, RustRover, VsCode, WebStorm};
 use ImageOperationError::OperationNotImplemented;
-use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
+use ServerImageId::{Git, Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::desktop::jetbrains_ide::JetBrainsIdeImage;
 use crate::image::desktop::jetbrains_toolbox::JetBrainsToolboxImage;
@@ -24,6 +24,7 @@ use crate::image::server::rust::RustImage;
 use crate::image::server::sdkman::SdkmanImage;
 use crate::image::server::ServerImageId;
 use crate::image::{Config, ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOperationError, ImageOps, LoadImage, StrFind, ToImageId};
+use crate::image::server::git::GitImage;
 use crate::os::Os;
 
 struct RepositoryImageLoader<T> where T: Display + ToImageId {
@@ -100,7 +101,8 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
             Gradle => ctx.load(GradleImage::new)?,
             Nvm => ctx.load(NvmImage::new)?,
             Node => ctx.load(NodeImage::new)?,
-            Miniconda => ctx.load(MinicondaImage::new)?
+            Miniconda => ctx.load(MinicondaImage::new)?,
+            Git => ImageLoadContext::basic_image_from(os, GitImage::new),
         };
 
         Ok(image)
@@ -115,6 +117,8 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
             Miniconda => ctx
                 .load_concrete(MinicondaImage::new)
                 .and_then(|image| ctx.load_to_image_config(image))?,
+
+            Git => ctx.load_to_image_config(GitImage::new(os))?,
 
             _ => Err(OperationNotImplemented(
                 self.id.to_image_id(),

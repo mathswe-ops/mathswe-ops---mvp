@@ -197,3 +197,71 @@ pub fn kill_process_and_wait(
 
     Ok(())
 }
+
+pub mod linux {
+    pub fn expand_home_path(path: &str) -> String {
+        if path.starts_with("~") {
+            dirs::home_dir()
+                .map(|home| path.replacen("~", &home.to_string_lossy(), 1))
+                .unwrap_or_else(|| path.to_string())
+        } else {
+            path.to_string()
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use dirs::home_dir;
+
+        #[test]
+        fn expands_home_directory_in_path() {
+            let path_with_tilde = "~/test/.gitignore";
+
+            // Get the expected home directory and form the expected path
+            let expected_path = home_dir()
+                .map(|home| format!("{}/test/.gitignore", home.to_string_lossy()))
+                .unwrap_or_else(|| path_with_tilde.to_string());
+
+            assert_eq!(expand_home_path(path_with_tilde), expected_path);
+        }
+
+        #[test]
+        fn expand_home_path_does_not_modify_path_without_tilde() {
+            let path_without_tilde = "/some/other/path/.gitignore";
+
+            assert_eq!(expand_home_path(path_without_tilde), path_without_tilde.to_string());
+        }
+
+        #[test]
+        fn expand_home_path_handles_empty_string_input() {
+            let empty_path = "";
+
+            assert_eq!(expand_home_path(empty_path), empty_path.to_string());
+        }
+
+        #[test]
+        fn expands_tilde_only_to_home_directory() {
+            let tilde_only = "~";
+
+            // When the path is "~", it should replace it with the home directory itself
+            let expected_path = home_dir()
+                .map(|home| home.to_string_lossy().to_string())
+                .unwrap_or_else(|| tilde_only.to_string());
+
+            assert_eq!(expand_home_path(tilde_only), expected_path);
+        }
+
+        #[test]
+        fn expands_home_directory_with_trailing_slash() {
+            let path_with_trailing_slash = "~/";
+
+            // Get the expected home directory and add a trailing slash
+            let expected_path = home_dir()
+                .map(|home| format!("{}/", home.to_string_lossy()))
+                .unwrap_or_else(|| path_with_trailing_slash.to_string());
+
+            assert_eq!(expand_home_path(path_with_trailing_slash), expected_path);
+        }
+    }
+}
