@@ -20,6 +20,7 @@ const ImageGrid: React.FC = () => {
         "Nvm",
         "Node",
         "Miniconda",
+        "Git",
     ];
     const desktopImages = ["Zoom", "VsCode", "JetBrainsToolbox"];
     const jetBrainsIdeImages = [
