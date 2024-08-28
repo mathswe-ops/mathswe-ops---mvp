@@ -151,7 +151,7 @@ function System() {
 
                     <p>
                         The flag <InlineCode>--config</InlineCode> provides
-                        image restoration.
+                        image restoration (if available).
 
                         <p>
                             For
