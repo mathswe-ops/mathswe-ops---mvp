@@ -26,6 +26,16 @@ MVP of the **MathSwe System Ops** CLI app.
 
 Project Root: [./system](system).
 
+## MVP: Ops.Math.Software
+
+[![Project](system/public/mathswe-ops-mvp-badge.svg)](https://ops.math.software)
+&nbsp;
+![GitHub Release](ops.math.software---mvp/public/mathswe-ops-mvp-app-release-badge.svg)
+
+MVP of the **MSW Ops** home.
+
+Project Root: [./ops.math.software---mvp](ops.math.software---mvp).
+
 ## Contact
 
 Tobias Briones: [GitHub](https://github.com/tobiasbriones)
