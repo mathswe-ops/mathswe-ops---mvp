@@ -1,0 +1,14 @@
+{
+  "core": {
+    "excludes_file": ""
+  },
+  "user": {
+    "name": "",
+    "email": "",
+    "signing_key": ""
+  },
+  "commit": {
+    "gpg_sign": false
+  },
+  "git_ignore": []
+}

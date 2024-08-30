@@ -1,7 +1,13 @@
 [package]
 name = "system"
-version = "0.1.0-dev"
+version = "0.1.0"
 edition = "2021"
+description = "It automates software operations in Linux, such as installation, uninstallation, and configuration, allowing you to set up server VMs and desktop Workstations by running a command."
+readme = "README.md"
+license = "GPL-3"
+homepage = "https://ops.math.software#system"
+repository = "https://github.com/mathswe-ops/mathswe-ops---mvp/tree/main/system"
+authors = ["Tobias Briones"]
 
 [dependencies]
 tempfile = "3.10.1"
@@ -10,3 +16,4 @@ sha2 = "0.10.8"
 clap = { version = "4.5.9", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+dirs = "5.0.1"

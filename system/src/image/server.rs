@@ -6,7 +6,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
+use ServerImageId::{Git, Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -22,6 +22,7 @@ pub enum ServerImageId {
     Nvm,
     Node,
     Miniconda,
+    Git,
 }
 
 impl Display for ServerImageId {
@@ -35,6 +36,7 @@ impl Display for ServerImageId {
             Nvm => "nvm",
             Node => "node",
             Miniconda => "miniconda",
+            Git => "git",
         };
 
         write!(f, "{}", msg)
@@ -52,6 +54,7 @@ impl StrFind for ServerImageId {
             "nvm" => Some(Nvm),
             "node" => Some(Node),
             "miniconda" => Some(Miniconda),
+            "git" => Some(Git),
             _ => None
         }
     }
@@ -1006,5 +1009,220 @@ pub mod miniconda {
 
             Ok(())
         }
+    }
+}
+
+pub mod git {
+    use crate::cmd::{exec_cmd, exec_cmd_async, print_output};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Git;
+    use crate::image::{Config, Image, ImageConfig, ToImageConfig};
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::os::Os;
+    use crate::package::{Package, Software};
+    use crate::{image_ops_impl, os};
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+    use std::fs;
+    use std::process::Output;
+
+    #[derive(Clone)]
+    pub struct GitImage(ServerImage);
+
+    impl GitImage {
+        pub fn new(os: Os) -> Self {
+            let id = Git;
+            let pkg_name = id.to_string();
+            let version = "latest";
+
+            GitImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("Software Freedom Conservancy", "Git", &version.to_string()),
+                    Url::parse("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for GitImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Git via APT...");
+
+            let output = exec_cmd("sudo", &["apt-get", "install", "git"])
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for GitImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Git via APT...");
+
+            let output = exec_cmd(
+                "sudo",
+                &["apt-get", "--yes", "remove", "git"],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for GitImage { image_ops_impl!(); }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct Core {
+        excludes_file: String,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct User {
+        name: String,
+        email: String,
+        signing_key: String,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct Commit {
+        gpg_sign: bool,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct GitConfig {
+        core: Core,
+        user: User,
+        commit: Commit,
+        git_ignore: Vec<String>,
+    }
+
+    type GitImageConfig = ImageConfig<GitImage, GitConfig>;
+
+    impl ToImageConfig<GitConfig> for GitImage {
+        fn to_image_config(&self, config: GitConfig) -> GitImageConfig {
+            ImageConfig(self.clone(), config)
+        }
+    }
+
+    impl Config for GitImageConfig {
+        fn config(&self) -> Result<(), String> {
+            let GitConfig { core, user, commit, git_ignore } = self.1.clone();
+
+            println!("Configuring Git Core...");
+
+            let output = exec_git_config_global(
+                "core.excludesFile",
+                &core.excludes_file,
+            )?;
+
+            print_output(output);
+
+            println!("Copying Git ignore...");
+
+            let new_line = |acc, cur| format!("{acc}\n{cur}");
+            let git_ignore_contents = git_ignore
+                .iter()
+                .fold("".to_string(), new_line);
+
+            write_git_ignore_file(core.excludes_file, git_ignore_contents)?;
+
+            println!("Configuring Git User...");
+
+            let output = exec_git_config_global(
+                "user.name",
+                &user.name,
+            )?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "user.email",
+                &user.email,
+            )?;
+
+            print_output(output);
+
+            println!("Configuring GPG...");
+
+            let output = exec_git_config_global_unset("gpg.format")?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "user.signingkey",
+                &user.signing_key,
+            )?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "commit.gpgsign",
+                &commit.gpg_sign.to_string(),
+            )?;
+
+            print_output(output);
+
+            Ok(())
+        }
+    }
+
+    fn exec_git_config_global(
+        arg1: &str,
+        arg2: &str,
+    ) -> Result<Output, String> {
+        exec_cmd("git", &["config", "--global", arg1, arg2])
+            .map_err(|error| error.to_string())
+    }
+
+    /// The unset flag returns status code 5 if it was not necessary to do
+    /// anything (the value was not present, so there's nothing to unset).
+    fn exec_git_config_global_unset(
+        prop: &str,
+    ) -> Result<Output, String> {
+        let args = ["config", "--global", "--unset", prop];
+        let output = exec_cmd_async("git", &args)
+            .map_err(|error| error.to_string())?
+            .wait_with_output()
+            .map_err(|error| error.to_string())?;
+
+        match output.status.code() {
+            Some(0) | Some(5) => Ok(output),
+            Some(n) => Err(format!("Unsuccessful code {n}.")),
+            None => Err("Unable to get status code.".to_string())
+        }
+    }
+
+    fn write_git_ignore_file(
+        excludes_file: String,
+        git_ignore_contents: String,
+    ) -> Result<(), String> {
+        if excludes_file.trim().is_empty() {
+            return match git_ignore_contents.is_empty() {
+                true => Ok(()),
+                false => Err("Value 'excludes_file' is empty but the \
+                Git ignore list is not. Provide a valid `excludes_file` value \
+                to copy the given Git ignore values.".to_string())
+            };
+        }
+
+        let git_ignore_path
+            = os::linux::expand_home_path(&excludes_file);
+
+        fs::write(git_ignore_path.clone(), git_ignore_contents)
+            .map_err(|error| format!(
+                "Fail to write Git ignore {}: {}",
+                git_ignore_path,
+                error,
+            ))
     }
 }
