@@ -22,6 +22,9 @@ function Footer() {
                         <li>
                             <a href="https://rsm.math.software">Repsymo</a>
                         </li>
+                        <li>
+                            <a href="https://ops.math.software">Ops</a>
+                        </li>
                     </ul>
                 </section>
 

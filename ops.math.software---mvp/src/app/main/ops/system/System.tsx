@@ -20,6 +20,7 @@ const ImageGrid: React.FC = () => {
         "Nvm",
         "Node",
         "Miniconda",
+        "Git",
     ];
     const desktopImages = ["Zoom", "VsCode", "JetBrainsToolbox"];
     const jetBrainsIdeImages = [
@@ -75,6 +76,18 @@ const ImageGrid: React.FC = () => {
         </div>
     );
 };
+
+interface InlineCodeProps {
+    children: string;
+}
+
+function InlineCode({ children }: InlineCodeProps) {
+    return <>
+        <code className="code language-plaintext highlighter-rouge">
+            { children }
+        </code>
+    </>;
+}
 
 interface CommandProps {
     command: string;
@@ -132,18 +145,34 @@ function System() {
                     <p>Install + Uninstall</p>
 
                     <Command
-                        command="system install { image_1, image_2, ..., image_n}"
+                        command="system install { image_1, ..., image_n }"
                         caption="Installation"
                     />
 
+                    <p>
+                        The flag <InlineCode>--config</InlineCode> provides
+                        image restoration (if available).
+
+                        <p>
+                            For
+                            example, <InlineCode>system install --config
+                            miniconda</InlineCode>.
+                        </p>
+                    </p>
+
                     <Command
-                        command="system uninstall { image_1, image_2, ..., image_n}"
+                        command="system uninstall { image_1, ..., image_n }"
                         caption="Uninstallation"
                     />
 
                     <Command
-                        command="system reinstall { image_1, image_2, ..., image_n}"
+                        command="system reinstall { image_1, ..., image_n }"
                         caption="Reinstallation"
+                    />
+
+                    <Command
+                        command="system config { image_1, ..., image_n }"
+                        caption="Configuration"
                     />
 
                     <SubSubHeading
@@ -152,6 +181,9 @@ function System() {
                     />
 
                     <ImageGrid />
+
+                    <p><strong>MathSwe System Ops MVP v0.1.0</strong></p>
+
                     <p>
                         Technical documentation at&nbsp;
                         <a
