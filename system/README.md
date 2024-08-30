@@ -220,6 +220,15 @@ The list of currently supported images is next.
 - PhpStorm
 - RubyMine
 
+## Building for Debian
+
+The crate [cargo-deb](https://crates.io/crates/cargo-deb) creates the `deb`
+installer from the Rust project. Install it in your system via
+`cargo install cargo-deb`.
+
+To create the executable run `cargo deb` in the project directory, and the tool
+will generate it in the `target/debian` directory.
+
 ## OS Compatibility
 
 The System MVP app is designed and tested for **Ubuntu** and should work for
