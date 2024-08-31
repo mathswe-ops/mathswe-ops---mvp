@@ -1,0 +1,31 @@
+/* Copyright (c) 2024 Tobias Briones. All rights reserved. */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp */
+
+section.mathswe {
+    background-color: #F5F5F5;
+}
+
+section.mathswe > .bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #F5F5F5 0%, #EEEEEE 50%, #F5F5F5 100%);
+}
+
+section.mathswe ::before,
+section.mathswe ::after {
+    background-color: #CFD8DC;
+}
+
+section.mathswe::before {
+    /* the linear gradient is a fallback because sometimes when resizing (firefox ubuntu, at least) the bg shows blank space to the left and right */
+    background: url("../../../assets/section-mathswe-top-bg.svg") no-repeat center, linear-gradient(to right, #FFE0B2 0%, #FFE0B2 100%) no-repeat left;
+    background-size: 100%, 0.5rem;
+
+    /* the border top fixes a thin line between the previous section and this, sometimes with different window sizes */
+    border-top: 2px solid #CFD8DC;
+}
+
+section.mathswe::after {
+    background-color: #F5F5F5;
+}

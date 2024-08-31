@@ -4,19 +4,27 @@
 
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
+use DesktopImageId::{CLion, DataGrip, Goland, IntelliJIdea, JetBrainsToolbox, PhpStorm, PyCharm, Rider, RubyMine, RustRover, VsCode, WebStorm};
+use ImageOperationError::OperationNotImplemented;
+use ServerImageId::{Git, Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
-use ServerImageId::{Go, Gradle, Java, Rust, Sdkman};
-
-use crate::image::{ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOps, LoadImage, StrFind, ToImageId};
+use crate::image::desktop::jetbrains_ide::JetBrainsIdeImage;
+use crate::image::desktop::jetbrains_toolbox::JetBrainsToolboxImage;
+use crate::image::desktop::vscode::VsCodeImage;
+use crate::image::desktop::zoom::ZoomImage;
 use crate::image::desktop::DesktopImageId;
 use crate::image::desktop::DesktopImageId::Zoom;
-use crate::image::desktop::zoom::ZoomImage;
 use crate::image::server::go::GoImage;
 use crate::image::server::gradle::GradleImage;
 use crate::image::server::java::JavaImage;
+use crate::image::server::miniconda::MinicondaImage;
+use crate::image::server::node::NodeImage;
+use crate::image::server::nvm::NvmImage;
 use crate::image::server::rust::RustImage;
 use crate::image::server::sdkman::SdkmanImage;
 use crate::image::server::ServerImageId;
+use crate::image::{Config, ImageId, ImageInfoError, ImageInfoLoader, ImageLoadContext, ImageLoader, ImageOperationError, ImageOps, LoadImage, StrFind, ToImageId};
+use crate::image::server::git::GitImage;
 use crate::os::Os;
 
 struct RepositoryImageLoader<T> where T: Display + ToImageId {
@@ -41,9 +49,29 @@ impl LoadImage for RepositoryImageLoader<DesktopImageId> {
         let ctx = ImageLoadContext::new(&os, info_loader);
         let image = match self.id {
             Zoom => ctx.load(ZoomImage::new)?,
+            VsCode => ctx.load(VsCodeImage::new)?,
+            JetBrainsToolbox => ctx.load(JetBrainsToolboxImage::new)?,
+            IntelliJIdea => ctx.load(JetBrainsIdeImage::intellij_idea())?,
+            WebStorm => ctx.load(JetBrainsIdeImage::webstorm())?,
+            RustRover => ctx.load(JetBrainsIdeImage::rustrover())?,
+            CLion => ctx.load(JetBrainsIdeImage::clion())?,
+            DataGrip => ctx.load(JetBrainsIdeImage::datagrip())?,
+            PyCharm => ctx.load(JetBrainsIdeImage::pycharm())?,
+            Goland => ctx.load(JetBrainsIdeImage::goland())?,
+            Rider => ctx.load(JetBrainsIdeImage::rider())?,
+            PhpStorm => ctx.load(JetBrainsIdeImage::phpstorm())?,
+            RubyMine => ctx.load(JetBrainsIdeImage::rubymine())?,
         };
 
         Ok(image)
+    }
+
+    fn load_config(&self, _: Os)
+        -> Result<Box<dyn Config>, ImageOperationError> {
+        Err(OperationNotImplemented(
+            self.id.to_image_id(),
+            "config".to_string(),
+        ))
     }
 }
 
@@ -71,9 +99,34 @@ impl LoadImage for RepositoryImageLoader<ServerImageId> {
             Sdkman => ImageLoadContext::basic_image_from(os, SdkmanImage::new),
             Java => ctx.load(JavaImage::new)?,
             Gradle => ctx.load(GradleImage::new)?,
+            Nvm => ctx.load(NvmImage::new)?,
+            Node => ctx.load(NodeImage::new)?,
+            Miniconda => ctx.load(MinicondaImage::new)?,
+            Git => ImageLoadContext::basic_image_from(os, GitImage::new),
         };
 
         Ok(image)
+    }
+
+    fn load_config(&self, os: Os)
+        -> Result<Box<dyn Config>, ImageOperationError> {
+        let info_loader = ImageInfoLoader::from(&self.id, PathBuf::from("image"), PathBuf::from(""));
+        let ctx = ImageLoadContext::new(&os, info_loader);
+
+        let config = match self.id {
+            Miniconda => ctx
+                .load_concrete(MinicondaImage::new)
+                .and_then(|image| ctx.load_to_image_config(image))?,
+
+            Git => ctx.load_to_image_config(GitImage::new(os))?,
+
+            _ => Err(OperationNotImplemented(
+                self.id.to_image_id(),
+                "config".to_string(),
+            ))?
+        };
+
+        Ok(config)
     }
 }
 

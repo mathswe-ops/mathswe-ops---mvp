@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use ServerImageId::{Go, Gradle, Java, Rust, Sdkman};
+use ServerImageId::{Git, Go, Gradle, Java, Miniconda, Node, Nvm, Rust, Sdkman};
 
 use crate::image::{Image, ImageId, StrFind, ToImageId};
 use crate::impl_image;
@@ -19,6 +19,10 @@ pub enum ServerImageId {
     Sdkman,
     Java,
     Gradle,
+    Nvm,
+    Node,
+    Miniconda,
+    Git,
 }
 
 impl Display for ServerImageId {
@@ -29,6 +33,10 @@ impl Display for ServerImageId {
             Sdkman => "sdkman",
             Java => "java",
             Gradle => "gradle",
+            Nvm => "nvm",
+            Node => "node",
+            Miniconda => "miniconda",
+            Git => "git",
         };
 
         write!(f, "{}", msg)
@@ -43,6 +51,10 @@ impl StrFind for ServerImageId {
             "sdkman" => Some(Sdkman),
             "java" => Some(Java),
             "gradle" => Some(Gradle),
+            "nvm" => Some(Nvm),
+            "node" => Some(Node),
+            "miniconda" => Some(Miniconda),
+            "git" => Some(Git),
             _ => None
         }
     }
@@ -68,14 +80,16 @@ pub struct ServerImage(ServerImageId, Package);
 
 impl_image!(ServerImage);
 
+
+
 pub mod rust {
     use reqwest::Url;
 
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Rust;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::Os::Linux;
@@ -148,10 +162,10 @@ pub mod go {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::download::{Downloader, DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::download::{DownloadRequest, Downloader, Integrity};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Go;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::os::Os::Linux;
@@ -289,16 +303,16 @@ pub mod go {
 }
 
 pub mod sdkman {
-    use std::{env, fs};
     use std::path::Path;
+    use std::{env, fs};
 
     use reqwest::Url;
 
     use crate::cmd::exec_cmd;
     use crate::download::{DownloadRequest, Integrity};
-    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Sdkman;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, Software};
@@ -409,10 +423,10 @@ pub mod java {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::image::{ImageOps, Install, Uninstall};
-    use crate::image::Image;
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Java;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVerVendor, Software};
@@ -487,10 +501,10 @@ pub mod gradle {
     use serde::{Deserialize, Serialize};
 
     use crate::cmd::exec_cmd;
-    use crate::image::{ImageOps, Install, Uninstall};
-    use crate::image::Image;
     use crate::image::server::ServerImage;
     use crate::image::server::ServerImageId::Gradle;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
     use crate::image_ops_impl;
     use crate::os::Os;
     use crate::package::{Package, SemVer, Software};
@@ -573,4 +587,642 @@ pub mod gradle {
     }
 
     impl ImageOps for GradleImage { image_ops_impl!(); }
+}
+
+pub mod nvm {
+    use std::path::Path;
+    use std::{env, fs};
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::download::{DownloadRequest, Integrity};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Nvm;
+    use crate::image::{Image, ImageOps, Install, Uninstall};
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NvmInfo {
+        version: SemVer,
+    }
+
+    pub struct NvmImage(ServerImage);
+
+    impl NvmImage {
+        pub fn new(os: Os, NvmInfo { version }: NvmInfo) -> Self {
+            let id = Nvm;
+            let pkg_id = id.to_string();
+            let fetch_url = format!("https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", version);
+
+            NvmImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        &pkg_id.as_str(),
+                        os,
+                        Software::new("nvm.sh", "NVM (Node Version Manager)", &version.to_string()),
+                        Url::parse("https://github.com/nvm-sh/nvm").unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::None).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for NvmImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Fetching and installing NVM.");
+
+            let bash_cmd = format!("curl --proto '=https' --tlsv1.2 -sSf -o- {} | bash", self.0.package().fetch.url());
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NvmImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let nvm_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join(".nvm"))
+                .map_err(|output| output.to_string())?;
+
+            println!("Unloading NVM...");
+
+            let nvm_cmd = "source ~/.nvm/nvm.sh && nvm unload";
+
+            let output = exec_cmd("bash", &["-c", nvm_cmd])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Deleting NVM files...");
+
+            fs::remove_dir_all(nvm_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Removing environment variables...");
+
+            // It deletes the lines from ~/.bashrc
+            // export NVM_DIR="$HOME/.nvm"
+            // [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+            // [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+            let prof = env::var("HOME")
+                .map(|home| Path::new(&home).join(".bashrc"))
+                .map_err(|output| output.to_string())?;
+
+            let clean_profile_pattern = r#"
+                /export NVM_DIR="\$HOME\/.nvm"/d;
+                /\[ -s "\$NVM_DIR\/nvm.sh" \] && \\. "\$NVM_DIR\/nvm.sh"/d;
+                /\[ -s "\$NVM_DIR\/bash_completion" \] && \\. "\$NVM_DIR\/bash_completion"/d
+            "#.trim();
+
+            let output = exec_cmd("sed", &["-i", clean_profile_pattern, prof.to_str().unwrap()])
+                .map_err(|output| output.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("NVM uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NvmImage { image_ops_impl!(); }
+}
+
+pub mod node {
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use crate::cmd::exec_cmd;
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Node;
+    use crate::image::Image;
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::image_ops_impl;
+    use crate::os::Os;
+    use crate::package::{Package, SemVer, Software};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct NodeInfo {
+        version: SemVer, // TODO supports latest version too
+    }
+
+    pub struct NodeImage(ServerImage);
+
+    impl NodeImage {
+        pub fn new(os: Os, NodeInfo { version }: NodeInfo) -> Self {
+            let id = Node;
+            let pkg_name = id.to_string();
+
+            NodeImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("OpenJS Foundation", "Node.js", &version.to_string()),
+                    Url::parse("https://nodejs.org/en").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for NodeImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Node via NVM.");
+
+            let nvm_cmd = format!("nvm install {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node installed");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for NodeImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Node via NVM.");
+
+            let nvm_cmd = format!("nvm uninstall {}", self.0.package().software.version);
+            let bash_cmd = format!("source ~/.nvm/nvm.sh && {}", nvm_cmd);
+            let output = exec_cmd("bash", &["-c", &bash_cmd])
+                .map_err(|error| error.to_string())?;
+
+            let stdout = String::from_utf8_lossy(&output.stdout);
+
+            println!("{}", stdout);
+
+            println!("Node uninstalled");
+
+            // TODO Consider fail: Cannot uninstall currently-active node version
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for NodeImage { image_ops_impl!(); }
+}
+
+pub mod miniconda {
+    use std::path::Path;
+    use std::process::Output;
+    use std::{env, fs};
+
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+
+    use Os::Linux;
+
+    use crate::cmd::{exec_cmd, print_output};
+    use crate::download::hashing::Hash;
+    use crate::download::hashing::HashAlgorithm::Sha256;
+    use crate::download::{DownloadRequest, Downloader, Integrity};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Miniconda;
+    use crate::image::{Config, Image, ImageConfig, ImageOps, Install, ToImageConfig, Uninstall};
+    use crate::os::Os;
+    use crate::os::OsArch::X64;
+    use crate::package::{Package, SemVer, Software};
+    use crate::tmp::TmpWorkingDir;
+    use crate::{cmd, image_ops_impl};
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct MinicondaInfo {
+        version: SemVer,
+        hash_sha256: String,
+        python_version: SemVer,
+    }
+
+    impl MinicondaInfo {
+        fn url_version(&self) -> String {
+            let SemVer(py_major, py_minor, _) = self.clone().python_version;
+            let py_ver = format!("py{py_major}{py_minor}");
+            let conda_ver = self.clone().version;
+
+            format!("{py_ver}_{conda_ver}")
+        }
+    }
+
+    #[derive(Clone)]
+    pub struct MinicondaImage(ServerImage);
+
+    impl MinicondaImage {
+        pub fn new(os: Os, info: MinicondaInfo) -> Self {
+            let MinicondaInfo { version, hash_sha256, .. } = info.clone();
+            let id = Miniconda;
+            let pkg_id = "conda";
+            let url_version = info.url_version();
+            let fetch_url = match os {
+                Linux(X64, _) => format!("https://repo.anaconda.com/miniconda/Miniconda3-{url_version}-0-Linux-x86_64.sh")
+            };
+            let hash = Hash::new(Sha256, hash_sha256);
+
+            MinicondaImage(
+                ServerImage(
+                    id,
+                    Package::new(
+                        pkg_id,
+                        os,
+                        Software::new("Anaconda, Inc", "Miniconda", &version.to_string()),
+                        Url::parse("https://docs.anaconda.com/miniconda/miniconda-install").unwrap(),
+                        DownloadRequest::new(&fetch_url, Integrity::Hash(hash)).unwrap(),
+                    ),
+                )
+            )
+        }
+    }
+
+    impl Install for MinicondaImage {
+        fn install(&self) -> Result<(), String> {
+            let tmp = TmpWorkingDir::new()
+                .map_err(|error| error.to_string())?;
+
+            let package = self.0.package();
+            let downloader = Downloader::from(package.fetch.clone(), &tmp);
+            let installer_file = downloader.path.clone();
+
+            println!("Downloading Miniconda installer...");
+
+            downloader
+                .download_blocking()
+                .map_err(|error| error.to_string())?;
+
+            println!("Installing Miniconda...");
+
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+            let output = exec_cmd(
+                "bash",
+                &[
+                    installer_file.to_str().unwrap(),
+                    "-b",
+                    "-u",
+                    "-p",
+                    miniconda_dir.to_str().unwrap()
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Miniconda installed.");
+
+            println!("Initializing miniconda.");
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "bash"],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            let conda = miniconda_dir.join("bin").join("conda");
+            let output = exec_cmd(
+                conda.to_str().unwrap(),
+                &["init", "zsh"],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Miniconda installed and initialized.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for MinicondaImage {
+        fn uninstall(&self) -> Result<(), String> {
+            let miniconda_dir = env::var("HOME")
+                .map(|home| Path::new(&home).join("miniconda3"))
+                .map_err(|output| output.to_string())?;
+
+            let print_optional_step = |output: cmd::Result<Output>| match output {
+                Ok(o) => {
+                    print_output(o);
+                }
+                Err(error) => {
+                    eprintln!("Fail to remove conda initialization scripts (optional step): {}", error);
+                }
+            };
+
+            println!("Removing conda initialization scripts (optional step)...");
+
+            let output = exec_cmd(
+                "conda",
+                &["init", "--reverse", "--all"],
+            );
+
+            print_optional_step(output);
+
+            println!("Removing Miniconda files...");
+
+            fs::remove_dir_all(miniconda_dir)
+                .map_err(|output| output.to_string())?;
+
+            println!("Miniconda uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for MinicondaImage { image_ops_impl!(); }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct MinicondaConfig {
+        env_name: String,
+        packages: Vec<String>,
+    }
+
+    type MinicondaImageConfig = ImageConfig<MinicondaImage, MinicondaConfig>;
+
+    impl ToImageConfig<MinicondaConfig> for MinicondaImage {
+        fn to_image_config(&self, config: MinicondaConfig) -> MinicondaImageConfig {
+            ImageConfig(self.clone(), config)
+        }
+    }
+
+    impl Config for MinicondaImageConfig {
+        fn config(&self) -> Result<(), String> {
+            let MinicondaConfig { env_name, packages } = self.1.clone();
+
+            println!(
+                "Creating Miniconda environment `{}` with packages {:?}...",
+                env_name,
+                packages,
+            );
+
+            let create_env_args = ["create", "-n", &env_name, "--yes"]
+                .iter()
+                .map(|&s| s)
+                .chain(packages.iter().map(String::as_str))
+                .collect::<Vec<&str>>();
+
+            let output = exec_cmd("conda", &create_env_args)
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Installing Jupyter kernel for `{env_name}`...");
+
+            let output = exec_cmd(
+                "conda",
+                &[
+                    "run",
+                    "-n",
+                    &env_name,
+                    "python",
+                    "-m",
+                    "ipykernel",
+                    "install",
+                    "--user",
+                    "--name",
+                    &env_name
+                ],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            Ok(())
+        }
+    }
+}
+
+pub mod git {
+    use crate::cmd::{exec_cmd, exec_cmd_async, print_output};
+    use crate::image::server::ServerImage;
+    use crate::image::server::ServerImageId::Git;
+    use crate::image::{Config, Image, ImageConfig, ToImageConfig};
+    use crate::image::{ImageOps, Install, Uninstall};
+    use crate::os::Os;
+    use crate::package::{Package, Software};
+    use crate::{image_ops_impl, os};
+    use reqwest::Url;
+    use serde::{Deserialize, Serialize};
+    use std::fs;
+    use std::process::Output;
+
+    #[derive(Clone)]
+    pub struct GitImage(ServerImage);
+
+    impl GitImage {
+        pub fn new(os: Os) -> Self {
+            let id = Git;
+            let pkg_name = id.to_string();
+            let version = "latest";
+
+            GitImage(ServerImage(
+                id,
+                Package::new_managed(
+                    &pkg_name,
+                    os,
+                    Software::new("Software Freedom Conservancy", "Git", &version.to_string()),
+                    Url::parse("https://git-scm.com/book/en/v2/Getting-Started-Installing-Git").unwrap(),
+                ),
+            ))
+        }
+    }
+
+    impl Install for GitImage {
+        fn install(&self) -> Result<(), String> {
+            println!("Installing Git via APT...");
+
+            let output = exec_cmd("sudo", &["apt-get", "install", "git"])
+                .map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git installed.");
+
+            Ok(())
+        }
+    }
+
+    impl Uninstall for GitImage {
+        fn uninstall(&self) -> Result<(), String> {
+            println!("Uninstalling Git via APT...");
+
+            let output = exec_cmd(
+                "sudo",
+                &["apt-get", "--yes", "remove", "git"],
+            ).map_err(|error| error.to_string())?;
+
+            print_output(output);
+
+            println!("Git uninstalled.");
+
+            Ok(())
+        }
+    }
+
+    impl ImageOps for GitImage { image_ops_impl!(); }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct Core {
+        excludes_file: String,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct User {
+        name: String,
+        email: String,
+        signing_key: String,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct Commit {
+        gpg_sign: bool,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct GitConfig {
+        core: Core,
+        user: User,
+        commit: Commit,
+        git_ignore: Vec<String>,
+    }
+
+    type GitImageConfig = ImageConfig<GitImage, GitConfig>;
+
+    impl ToImageConfig<GitConfig> for GitImage {
+        fn to_image_config(&self, config: GitConfig) -> GitImageConfig {
+            ImageConfig(self.clone(), config)
+        }
+    }
+
+    impl Config for GitImageConfig {
+        fn config(&self) -> Result<(), String> {
+            let GitConfig { core, user, commit, git_ignore } = self.1.clone();
+
+            println!("Configuring Git Core...");
+
+            let output = exec_git_config_global(
+                "core.excludesFile",
+                &core.excludes_file,
+            )?;
+
+            print_output(output);
+
+            println!("Copying Git ignore...");
+
+            let new_line = |acc, cur| format!("{acc}\n{cur}");
+            let git_ignore_contents = git_ignore
+                .iter()
+                .fold("".to_string(), new_line);
+
+            write_git_ignore_file(core.excludes_file, git_ignore_contents)?;
+
+            println!("Configuring Git User...");
+
+            let output = exec_git_config_global(
+                "user.name",
+                &user.name,
+            )?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "user.email",
+                &user.email,
+            )?;
+
+            print_output(output);
+
+            println!("Configuring GPG...");
+
+            let output = exec_git_config_global_unset("gpg.format")?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "user.signingkey",
+                &user.signing_key,
+            )?;
+
+            print_output(output);
+
+            let output = exec_git_config_global(
+                "commit.gpgsign",
+                &commit.gpg_sign.to_string(),
+            )?;
+
+            print_output(output);
+
+            Ok(())
+        }
+    }
+
+    fn exec_git_config_global(
+        arg1: &str,
+        arg2: &str,
+    ) -> Result<Output, String> {
+        exec_cmd("git", &["config", "--global", arg1, arg2])
+            .map_err(|error| error.to_string())
+    }
+
+    /// The unset flag returns status code 5 if it was not necessary to do
+    /// anything (the value was not present, so there's nothing to unset).
+    fn exec_git_config_global_unset(
+        prop: &str,
+    ) -> Result<Output, String> {
+        let args = ["config", "--global", "--unset", prop];
+        let output = exec_cmd_async("git", &args)
+            .map_err(|error| error.to_string())?
+            .wait_with_output()
+            .map_err(|error| error.to_string())?;
+
+        match output.status.code() {
+            Some(0) | Some(5) => Ok(output),
+            Some(n) => Err(format!("Unsuccessful code {n}.")),
+            None => Err("Unable to get status code.".to_string())
+        }
+    }
+
+    fn write_git_ignore_file(
+        excludes_file: String,
+        git_ignore_contents: String,
+    ) -> Result<(), String> {
+        if excludes_file.trim().is_empty() {
+            return match git_ignore_contents.is_empty() {
+                true => Ok(()),
+                false => Err("Value 'excludes_file' is empty but the \
+                Git ignore list is not. Provide a valid `excludes_file` value \
+                to copy the given Git ignore values.".to_string())
+            };
+        }
+
+        let git_ignore_path
+            = os::linux::expand_home_path(&excludes_file);
+
+        fs::write(git_ignore_path.clone(), git_ignore_contents)
+            .map_err(|error| format!(
+                "Fail to write Git ignore {}: {}",
+                git_ignore_path,
+                error,
+            ))
+    }
 }

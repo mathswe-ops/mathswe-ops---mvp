@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp
 
-use std::io;
+use crate::cmd::{exec_cmd};
+use crate::os::Os::Linux;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+use std::{io, thread};
 use LinuxType::Ubuntu;
 use OsArch::X64;
 use PkgType::Deb;
-use crate::cmd::exec_cmd;
-use crate::os::Os::Linux;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum OsArch {
@@ -97,5 +100,168 @@ pub fn detect_os() -> io::Result<Option<Os>> {
         }
     } else {
         Ok(None)
+    }
+}
+
+/// Notice: It may return a list of truncated process names, so check for
+/// prefixes when trying to find a process name. For example, it may return
+/// "jetbrains-toolb" instead of "jetbrains-toolbox."
+pub fn get_running_processes(os: Os) -> Result<Vec<String>, String> {
+    match os {
+        Linux(X64, Ubuntu) => get_running_processes_ubuntu()
+    }
+}
+
+fn get_running_processes_ubuntu() -> Result<Vec<String>, String> {
+    let output = exec_cmd("ps", &["-e", "-o", "comm="])
+        .map_err(|error| error.to_string())?;
+
+    let reader = BufReader::new(&output.stdout[..]);
+    let processes = reader
+        .lines()
+        .filter_map(|line| line.ok())  // Remove any errors
+        .collect::<Vec<String>>();
+
+    Ok(processes)
+}
+
+pub fn kill_process(os: Os, process_name: &str) -> Result<(), String> {
+    match os {
+        Linux(X64, Ubuntu) => kill_process_ubuntu(process_name)
+    }
+}
+
+fn kill_process_ubuntu(process_name: &str) -> Result<(), String> {
+    exec_cmd("killall", &[process_name])
+        .map_err(|error| error.to_string())?;
+
+    Ok(())
+}
+
+/// Notice: Similar to `get_running_processes`, the `process_name_prefix`
+/// argument must be a prefix of the actual process name since the low-level
+/// commands will probably truncate the name.
+pub fn kill_process_and_wait(
+    os: Os,
+    process_name: &str,
+    process_name_prefix: &str,
+) -> Result<(), String> {
+    kill_process(os, process_name)?;
+
+    // Start the timer
+    let start_time = Instant::now();
+    let timeout = Duration::from_secs(5);
+
+    // Wait until the process is fully terminated or timeout
+    loop {
+        let output = Command::new("pgrep")
+            .arg(process_name_prefix)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|error| format!("Fail to start command pgrep: {error}"))?
+            .wait_with_output()
+            .map_err(|error| format!("Fail to execute command pgrep: {error}"))?;
+
+        // 0 One  or  more processes matched the criteria. For pkill and pid‐
+        //   wait, one or more processes must  also  have  been  successfully
+        //   signalled or waited for.
+        // 1 No processes matched or none of them could be signalled.
+        //
+        // Source: `man pgrep`
+        let ok_status_code = match output.status.code() {
+            Some(0) => Ok(0),
+            Some(1) => Ok(1),
+            Some(code) => Err(format!("Failed to execute pgrep with status code {code}")),
+            None => Err("Failed to execute pgrep with no status code".to_string()),
+        }?;
+
+        // If pgrep finds no processes, it means the process is terminated
+        if ok_status_code == 1 {
+            break;
+        }
+
+        // Check if the timeout has been reached
+        if start_time.elapsed() >= timeout {
+            return Err(format!(
+                "Process {} (prefix {}) did not terminate within the timeout period.",
+                process_name,
+                process_name_prefix,
+            ));
+        }
+
+        // Sleep for a short time before checking again
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    Ok(())
+}
+
+pub mod linux {
+    pub fn expand_home_path(path: &str) -> String {
+        if path.starts_with("~") {
+            dirs::home_dir()
+                .map(|home| path.replacen("~", &home.to_string_lossy(), 1))
+                .unwrap_or_else(|| path.to_string())
+        } else {
+            path.to_string()
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use dirs::home_dir;
+
+        #[test]
+        fn expands_home_directory_in_path() {
+            let path_with_tilde = "~/test/.gitignore";
+
+            // Get the expected home directory and form the expected path
+            let expected_path = home_dir()
+                .map(|home| format!("{}/test/.gitignore", home.to_string_lossy()))
+                .unwrap_or_else(|| path_with_tilde.to_string());
+
+            assert_eq!(expand_home_path(path_with_tilde), expected_path);
+        }
+
+        #[test]
+        fn expand_home_path_does_not_modify_path_without_tilde() {
+            let path_without_tilde = "/some/other/path/.gitignore";
+
+            assert_eq!(expand_home_path(path_without_tilde), path_without_tilde.to_string());
+        }
+
+        #[test]
+        fn expand_home_path_handles_empty_string_input() {
+            let empty_path = "";
+
+            assert_eq!(expand_home_path(empty_path), empty_path.to_string());
+        }
+
+        #[test]
+        fn expands_tilde_only_to_home_directory() {
+            let tilde_only = "~";
+
+            // When the path is "~", it should replace it with the home directory itself
+            let expected_path = home_dir()
+                .map(|home| home.to_string_lossy().to_string())
+                .unwrap_or_else(|| tilde_only.to_string());
+
+            assert_eq!(expand_home_path(tilde_only), expected_path);
+        }
+
+        #[test]
+        fn expands_home_directory_with_trailing_slash() {
+            let path_with_trailing_slash = "~/";
+
+            // Get the expected home directory and add a trailing slash
+            let expected_path = home_dir()
+                .map(|home| format!("{}/", home.to_string_lossy()))
+                .unwrap_or_else(|| path_with_trailing_slash.to_string());
+
+            assert_eq!(expand_home_path(path_with_trailing_slash), expected_path);
+        }
     }
 }

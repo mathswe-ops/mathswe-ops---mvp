@@ -18,8 +18,12 @@ impl TmpWorkingDir {
         Ok(TmpWorkingDir { dir: temp_dir })
     }
 
+    pub fn path(&self) -> &Path {
+        self.dir.path()
+    }
+
     pub fn join(&self, path: &Path) -> PathBuf {
-        self.dir.path().join(path)
+        self.path().join(path)
     }
 }
 

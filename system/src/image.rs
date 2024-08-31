@@ -9,10 +9,10 @@ use std::path::PathBuf;
 
 use serde::de::DeserializeOwned;
 
-use ImageInfoError::{IoError, SerdeError};
-
+use crate::image::ImageOperationError::{InfoError, OperationNotImplemented};
 use crate::os::Os;
 use crate::package::Package;
+use ImageInfoError::{IoError, SerdeError};
 
 pub(crate) mod repository;
 mod desktop;
@@ -89,6 +89,30 @@ macro_rules! image_ops_impl {
     };
 }
 
+pub trait ImageOperation {
+    fn image_id(&self) -> ImageId;
+}
+
+pub trait Config: ImageOperation {
+    fn config(&self) -> Result<(), String>;
+}
+
+pub struct ImageConfig<I, C>(I, C) where I: ImageOps, C: DeserializeOwned;
+
+pub trait ToImageConfig<C> where Self: ImageOps + Sized, C: DeserializeOwned {
+    fn to_image_config(&self, config: C) -> ImageConfig<Self, C>;
+}
+
+impl<I, C> ImageOperation for ImageConfig<I, C>
+where
+    I: ImageOps,
+    C: DeserializeOwned,
+{
+    fn image_id(&self) -> ImageId {
+        self.0.image().id()
+    }
+}
+
 #[derive(Debug)]
 pub enum ImageInfoError {
     IoError(String),
@@ -106,19 +130,84 @@ impl Display for ImageInfoError {
     }
 }
 
+#[derive(Debug)]
+pub enum ImageOperationError {
+    OperationNotImplemented(ImageId, String),
+    InfoError(ImageInfoError),
+}
+
+impl ImageOperationError {
+    fn from_image_info_error(error: ImageInfoError) -> Self {
+        InfoError(error)
+    }
+}
+
+impl Display for ImageOperationError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            OperationNotImplemented(id, op) =>
+                format!("Operation {op} not implemented for image {id}"),
+
+            InfoError(error) => error.to_string(),
+        };
+
+        write!(f, "{}", msg)
+    }
+}
+
+pub enum InfoFileType {
+    Image,
+    Config,
+}
+
+impl Display for InfoFileType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            InfoFileType::Image => "image",
+            InfoFileType::Config => "config",
+        };
+
+        write!(f, "{}", msg)
+    }
+}
+
 pub struct ImageInfoLoader {
     id: ImageId,
     root: PathBuf,
     dir: PathBuf,
+    file_type: InfoFileType,
 }
 
 impl ImageInfoLoader {
-    pub fn from<T: Clone + ToImageId>(id: &T, root: PathBuf, dir: PathBuf) -> Self {
-        ImageInfoLoader { id: id.clone().to_image_id(), root, dir }
+    pub fn from<T: Clone + ToImageId>(
+        concrete_id: &T,
+        root: PathBuf,
+        dir: PathBuf,
+    ) -> Self {
+        let id = concrete_id.clone().to_image_id();
+        let file_type = InfoFileType::Image;
+
+        ImageInfoLoader { id, root, dir, file_type }
+    }
+
+    pub fn of(&self, file_type: InfoFileType) -> Self {
+        Self {
+            id: self.id.clone(),
+            root: self.root.clone(),
+            dir: self.dir.clone(),
+            file_type,
+        }
     }
 
     pub fn path(&self) -> PathBuf {
-        self.root.join(self.dir.clone()).join(format!("{}.json", self.id))
+        let dir = self.root.join(self.dir.clone());
+
+        let filename = match self.file_type {
+            InfoFileType::Image => format!("{}.json", self.id),
+            _ => format!("{}.{}.json", self.id, self.file_type),
+        };
+
+        dir.join(filename)
     }
 
     pub fn load<D: DeserializeOwned>(&self) -> Result<D, ImageInfoError> {
@@ -147,7 +236,7 @@ impl ImageLoadContext {
 
     pub fn basic_image_from<T: ImageOps + 'static>(
         os: Os,
-        cons: fn(Os) -> T
+        cons: fn(Os) -> T,
     ) -> Box<dyn ImageOps> {
         Box::new(cons(os))
     }
@@ -155,24 +244,96 @@ impl ImageLoadContext {
     fn image_from<D: DeserializeOwned, T: ImageOps + 'static>(
         os: Os,
         info: D,
-        cons: fn(Os, D) -> T
+        cons: impl Fn(Os, D) -> T,
     ) -> Box<dyn ImageOps> {
         Box::new(cons(os, info))
     }
 
     pub fn load<D: DeserializeOwned, T: ImageOps + 'static>(
         &self,
-        cons: fn(Os, D) -> T,
+        cons: impl Fn(Os, D) -> T,
     ) -> Result<Box<dyn ImageOps>, ImageInfoError> {
         let info = self.info_loader.load()?;
         let image = Self::image_from(self.os.clone(), info, cons);
 
         Ok(image)
     }
+
+    pub fn load_concrete<D: DeserializeOwned, T: ImageOps + 'static>(
+        &self,
+        cons: impl Fn(Os, D) -> T,
+    ) -> Result<T, ImageOperationError> {
+        let info = self
+            .info_loader
+            .load()
+            .map_err(ImageOperationError::from_image_info_error)?;
+
+        let image = cons(self.os.clone(), info);
+
+        Ok(image)
+    }
+
+    pub fn load_config<D: DeserializeOwned>(
+        &self,
+    ) -> Result<D, ImageInfoError> {
+        let config = self
+            .info_loader
+            .of(InfoFileType::Config)
+            .load()?;
+
+        Ok(config)
+    }
+
+    pub fn load_to_image_config<D, T>(
+        &self,
+        image: T,
+    ) -> Result<Box<dyn Config>, ImageOperationError>
+    where
+        D: DeserializeOwned + 'static,
+        T: ImageOps + ToImageConfig<D> + 'static,
+        ImageConfig<T, D>: Config,
+    {
+        let config = self
+            .load_config()
+            .map(|config| image.to_image_config(config))
+            .map_err(ImageOperationError::from_image_info_error)?;
+
+        Ok(Box::new(config))
+    }
 }
 
 pub trait LoadImage where Self: Display {
     fn load_image(&self, os: Os) -> Result<Box<dyn ImageOps>, ImageInfoError>;
+
+    fn load_config(&self, os: Os) -> Result<Box<dyn Config>, ImageOperationError>;
 }
 
 pub trait ImageLoader: Display + ToImageId + LoadImage {}
+
+#[cfg(test)]
+mod tests {
+    use crate::image::{ImageId, ImageInfoLoader, InfoFileType};
+    use std::path::PathBuf;
+
+    #[test]
+    fn image_info_path() {
+        let info = ImageInfoLoader {
+            id: ImageId("image_name".to_string()),
+            root: PathBuf::from("image"),
+            dir: PathBuf::from(""),
+            file_type: InfoFileType::Image,
+        };
+
+        assert_eq!(
+            PathBuf::from("image/image_name.json"),
+            info.path(),
+        );
+
+        let config = info.of(InfoFileType::Config);
+
+        assert_eq!(
+            PathBuf::from("image/image_name.config.json"),
+            config.path(),
+        );
+    }
+}
