@@ -1,6 +1,6 @@
 [package]
 name = "system"
-version = "0.1.0"
+version = "0.1.0-dev"
 edition = "2021"
 description = "It automates software operations in Linux, such as installation, uninstallation, and configuration, allowing you to set up server VMs and desktop Workstations by running a command."
 readme = "README.md"
