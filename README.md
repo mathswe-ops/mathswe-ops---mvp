@@ -4,13 +4,13 @@
 
 # MVP: MathSwe Ops
 
-[![Project](system/public/mathswe-ops-mvp-badge.svg)](https://ops.math.software)
+[![Project](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/project/mathswe-ops?mvp)](https://ops.math.software)
 &nbsp;
 [![GitHub Repository](https://img.shields.io/static/v1?label=GITHUB&message=REPOSITORY&labelColor=555&color=0277bd&style=for-the-badge&logo=GITHUB)](https://github.com/mathswe-ops/mathswe-ops---mvp)
 
 [![GitHub Project License](https://img.shields.io/github/license/mathswe-ops/mathswe-ops---mvp.svg?style=flat-square)](https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/LICENSE)
 
-![GitHub Release](system/public/mathswe-ops-mvp-release-badge.svg)
+[![GitHub Release](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/version/github/mathswe-ops/mathswe-ops---mvp)](https://github.com/mathswe-ops/mathswe-ops---mvp/releases/latest)
 
 MVP (Minimum Viable Project) of the **MathSwe Ops** organization aims to
 automate the development and deployment of mathematical software with SWAM
@@ -18,9 +18,9 @@ automate the development and deployment of mathematical software with SWAM
 
 ## MVP: System
 
-[![Project](system/public/mathswe-ops-mvp-badge.svg)](https://ops.math.software)
+[![Project](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/project/mathswe-system-ops?mvp)](https://ops.math.software#system)
 &nbsp;
-![GitHub Release](system/public/system-mvp-app-release-badge.svg)
+![GitHub Release](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/version/github/mathswe-ops/mathswe-ops---mvp?path=system)
 
 MVP of the **MathSwe System Ops** CLI app.
 
@@ -28,9 +28,9 @@ Project Root: [./system](system).
 
 ## MVP: Ops.Math.Software
 
-[![Project](system/public/mathswe-ops-mvp-badge.svg)](https://ops.math.software)
+[![Project](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/project/mathswe-ops)](https://ops.math.software)
 &nbsp;
-![GitHub Release](ops.math.software---mvp/public/mathswe-ops-mvp-app-release-badge.svg)
+![GitHub Release](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/version/github/mathswe-ops/mathswe-ops---mvp?path=ops.math.software---mvp)
 
 MVP of the **MSW Ops** home.
 
