@@ -4,13 +4,13 @@
 
 # System
 
-[![Project](public/system-mvp-app-badge.svg)](https://ops.math.software)
+[![Project](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/project/mathswe-system-ops?mvp)](https://ops.math.software#system)
 &nbsp;
 [![GitHub Repository](https://img.shields.io/static/v1?label=GITHUB&message=REPOSITORY&labelColor=555&color=0277bd&style=for-the-badge&logo=GITHUB)](https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/system)
 
 [![GitHub Project License](https://img.shields.io/github/license/mathswe-ops/mathswe-ops---mvp.svg?style=flat-square)](https://github.com/mathswe-ops/mathswe-ops---mvp/blob/main/LICENSE)
 
-![GitHub Release](public/system-mvp-app-release-badge.svg)
+![GitHub Release](https://mathswe-ops-services.tobiasbriones-dev.workers.dev/badge/version/github/mathswe-ops/mathswe-ops---mvp?path=system)
 
 The System CLI application is a part of the MathSwe Ops MVP to automate software
 operations in Linux, such as installation, uninstallation, and configuration,
