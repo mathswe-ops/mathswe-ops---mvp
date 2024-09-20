@@ -7,6 +7,7 @@ import "@app/main/Main.css";
 import Swam from "./ops/Swam.tsx";
 import MathSwe from "./ops/mathswe/MathSwe.tsx";
 import System from "./ops/system/System.tsx";
+import Services from "@app/main/ops/services/Services.tsx";
 
 function Main() {
     return <>
@@ -24,6 +25,8 @@ function Main() {
                     <MathSwe />
 
                     <System />
+
+                    <Services />
                 </article>
             </main>
         </section>

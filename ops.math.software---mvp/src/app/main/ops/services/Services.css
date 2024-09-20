@@ -1,0 +1,54 @@
+/* Copyright (c) 2024 Tobias Briones. All rights reserved. */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* This file is part of https://github.com/mathswe-ops/mathswe-ops---mvp */
+
+figcaption {
+    background-color: white;
+}
+
+section.services {
+    background-color: #FFF3E0;
+}
+
+section.services > .bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #ECEFF1 0%, #CFD8DC 50%, #ECEFF1 100%);
+}
+
+section.services::before {
+    /* the linear gradient is a fallback because sometimes when resizing (firefox ubuntu, at least) the bg shows blank space to the left and right */
+    background: url("../../../assets/section-services-top-bg.svg") no-repeat center, linear-gradient(to right, #ECEFF1 0%, #ECEFF1 100%) no-repeat left;
+    background-size: 100%, 0.5rem;
+
+    /* the border top fixes a thin line between the previous section and this, sometimes with different window sizes */
+    border-top: 2px solid #FFE0B2;
+}
+
+section.services::after {
+    background-color: #ECEFF1;
+}
+
+code > span.method {
+    font-weight: bold;
+    color: white;
+    background-color: #2196F3;
+    padding: 2px 6px;
+    margin-right: 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+code {
+    padding: 0.5rem 1rem !important;
+    border-bottom: none !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+h2 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
